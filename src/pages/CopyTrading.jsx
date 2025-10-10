@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import {
   Typography,
@@ -58,6 +59,7 @@ function TabPanel({ children, value, index }) {
 export default function CopyTrading() {
   const { user, loading, error } = useUser();
   const theme = useTheme();
+  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [selectedTrader, setSelectedTrader] = useState(null);
@@ -80,7 +82,7 @@ export default function CopyTrading() {
     return { label: 'Inactive', color: 'default' };
   };
   const navigateToSettings = () => {
-    window.location.href = '/account-settings';
+    navigate('/account-settings');
   };
 
   // Mock data for top traders - More realistic live trader data
