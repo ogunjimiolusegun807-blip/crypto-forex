@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import {
   Typography,
@@ -97,7 +98,7 @@ export default function ReferUser() {
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const handleSupportClick = () => setSupportDialogOpen(true);
   const handleSupportDialogClose = () => setSupportDialogOpen(false);
-  const navigate = useTheme().palette ? require('react-router-dom').useNavigate() : () => {};
+  const navigate = useNavigate();
   // Helper for KYC/account status mapping
   const getAccountStatus = () => {
     if (!user?.kycStatus || user.kycStatus === 'unverified') {
