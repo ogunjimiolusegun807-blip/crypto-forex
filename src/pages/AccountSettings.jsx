@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import {
   Typography,
@@ -76,14 +77,13 @@ import {
 } from '@mui/icons-material';
 
 export default function AccountSettings() {
-  // Navigation (assumes react-router-dom is used)
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
-  const navigate = window?.location ? (path) => { window.location.hash = `#/${path}`; } : () => {};
+  const navigate = useNavigate();
 
-  const handleAccountClick = () => navigate('dashboard');
-  const handleDepositClick = () => navigate('deposits');
-  const handleWithdrawClick = () => navigate('withdrawals');
-  const handleSettingsClick = () => navigate('accountsettings');
+  const handleAccountClick = () => navigate('/dashboard');
+  const handleDepositClick = () => navigate('/deposits');
+  const handleWithdrawClick = () => navigate('/withdrawals');
+  const handleSettingsClick = () => navigate('/accountsettings');
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
   const theme = useTheme();
