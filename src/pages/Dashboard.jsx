@@ -77,6 +77,12 @@ export default function Dashboard() {
   }, [user]);
 
   // Cards use dashboardData
+  // Add tickerData for ticker bar
+  const tickerData = [
+    { label: 'BTC/USDT', value: '$27,000', change: '+2.5%', color: theme.palette.success.main },
+    { label: 'EUR/USD', value: '1.10', change: '-0.3%', color: theme.palette.error.main },
+    { label: 'AAPL', value: '$170', change: '+1.2%', color: theme.palette.success.main }
+  ];
   const cardGradient = 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)';
   const topCards = [
     { label: 'Total Balance', value: `$${dashboardData.balance.toLocaleString()}`, icon: <AccountBalanceWalletIcon />, gradient: cardGradient },
