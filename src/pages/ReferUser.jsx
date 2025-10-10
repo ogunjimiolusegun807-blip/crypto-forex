@@ -82,17 +82,7 @@ import {
 
 // Mock referral data
 
-  // Real referral data from user context
-  const referralId = user?.username || '';
-  const referralLink = user?.username ? `https://crypto-forex-three.vercel.app/ref/${user.username}` : '';
-  const totalReferrals = user?.referralData?.totalReferrals || 0;
-  const activeReferrals = user?.referralData?.activeReferrals || 0;
-  const totalCommissions = user?.referralData?.totalCommissions || 0;
-  const pendingCommissions = user?.referralData?.pendingCommissions || 0;
-  const referredBy = user?.referralData?.referredBy || null;
-  const tier = user?.referralData?.tier || referralTiers[0].name;
-  const nextTierProgress = user?.referralData?.nextTierProgress || 0;
-  const referralList = user?.referralList || [];
+
 
 
 const referralTiers = [
@@ -108,6 +98,18 @@ export default function ReferUser() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedReferral, setSelectedReferral] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
+  // Real referral data from user context (now inside function)
+  const referralId = user?.username || '';
+  const referralLink = user?.username ? `https://crypto-forex-three.vercel.app/ref/${user.username}` : '';
+  const totalReferrals = user?.referralData?.totalReferrals || 0;
+  const activeReferrals = user?.referralData?.activeReferrals || 0;
+  const totalCommissions = user?.referralData?.totalCommissions || 0;
+  const pendingCommissions = user?.referralData?.pendingCommissions || 0;
+  const referredBy = user?.referralData?.referredBy || null;
+  const tier = user?.referralData?.tier || referralTiers[0].name;
+  const nextTierProgress = user?.referralData?.nextTierProgress || 0;
+  const referralList = user?.referralList || [];
 
   const handleCopyLink = () => {
     if (referralLink) navigator.clipboard.writeText(referralLink);
