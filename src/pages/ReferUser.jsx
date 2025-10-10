@@ -81,80 +81,19 @@ import {
 } from '@mui/icons-material';
 
 // Mock referral data
-const mockReferralData = {
-  referralId: 'theophilus',
-  referralLink: 'https://elonbroker.com/ref/theophilus',
-  totalReferrals: 12,
-  activeReferrals: 8,
-  totalCommissions: 2850.75,
-  pendingCommissions: 425.50,
-  referredBy: null,
-  tier: 'Gold',
-  nextTierProgress: 75
-};
 
-const mockReferralList = [
-  {
-    id: 1,
-    clientName: 'John Smith',
-    refLevel: 'Level 1',
-    parent: 'Direct',
-    clientStatus: 'Active',
-    dateRegistered: '2024-09-15',
-    totalDeposit: 5000.00,
-    commission: 125.00,
-    country: 'United States',
-    accountType: 'Premium'
-  },
-  {
-    id: 2,
-    clientName: 'Maria Garcia',
-    refLevel: 'Level 1',
-    parent: 'Direct',
-    clientStatus: 'Active',
-    dateRegistered: '2024-09-20',
-    totalDeposit: 3200.00,
-    commission: 80.00,
-    country: 'Spain',
-    accountType: 'Standard'
-  },
-  {
-    id: 3,
-    clientName: 'David Chen',
-    refLevel: 'Level 2',
-    parent: 'John Smith',
-    clientStatus: 'Pending',
-    dateRegistered: '2024-09-22',
-    totalDeposit: 1500.00,
-    commission: 22.50,
-    country: 'Singapore',
-    accountType: 'Standard'
-  },
-  {
-    id: 4,
-    clientName: 'Sarah Johnson',
-    refLevel: 'Level 1',
-    parent: 'Direct',
-    clientStatus: 'Active',
-    dateRegistered: '2024-09-25',
-    totalDeposit: 7500.00,
-    commission: 187.50,
-    country: 'Canada',
-    accountType: 'VIP'
-  },
-  {
-    id: 5,
-    clientName: 'Ahmed Hassan',
-    refLevel: 'Level 1',
-    parent: 'Direct',
-    clientStatus: 'Active',
-    dateRegistered: '2024-09-26',
-    totalDeposit: 2800.00,
-    commission: 70.00,
-    country: 'UAE',
-    accountType: 'Premium'
-  }
-];
+  // Real referral data from user context
+  const referralId = user?.username || '';
+  const referralLink = user?.username ? `https://crypto-forex-three.vercel.app/ref/${user.username}` : '';
+  const totalReferrals = user?.referralData?.totalReferrals || 0;
+  const activeReferrals = user?.referralData?.activeReferrals || 0;
+  const totalCommissions = user?.referralData?.totalCommissions || 0;
+  const pendingCommissions = user?.referralData?.pendingCommissions || 0;
+  const referredBy = user?.referralData?.referredBy || null;
+  const tier = user?.referralData?.tier || referralTiers[0].name;
+  const nextTierProgress = user?.referralData?.nextTierProgress || 0;
+  const referralList = user?.referralList || [];
+
 
 const referralTiers = [
   { name: 'Bronze', minReferrals: 0, commission: '2%', color: '#CD7F32', benefits: ['Basic support', 'Standard commissions'] },
@@ -171,13 +110,13 @@ export default function ReferUser() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(mockReferralData.referralLink);
+    if (referralLink) navigator.clipboard.writeText(referralLink);
     // Show success message
   };
 
   const handleShare = (platform) => {
-    const text = `Join me on Elon Investment Broker and start your trading journey! Use my referral link: ${mockReferralData.referralLink}`;
-    const url = mockReferralData.referralLink;
+  const text = `Join me on Elon Investment Broker and start your trading journey! Use my referral link: ${referralLink}`;
+  const url = referralLink;
 
     switch (platform) {
       case 'facebook':
@@ -220,11 +159,11 @@ export default function ReferUser() {
   };
 
   const getCurrentTier = () => {
-    return referralTiers.find(tier => tier.name === mockReferralData.tier) || referralTiers[0];
+  return referralTiers.find(t => t.name === tier) || referralTiers[0];
   };
 
   const getNextTier = () => {
-    const currentIndex = referralTiers.findIndex(tier => tier.name === mockReferralData.tier);
+  const currentIndex = referralTiers.findIndex(t => t.name === tier);
     return referralTiers[currentIndex + 1] || null;
   };
 
@@ -391,7 +330,7 @@ export default function ReferUser() {
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                     <TextField
                       fullWidth
-                      value={mockReferralData.referralLink}
+                      value={referralLink}
                       InputProps={{
                         readOnly: true,
                         sx: { 
@@ -440,6 +379,7 @@ export default function ReferUser() {
                     }}
                   >
                     {mockReferralData.referralId}
+                    {referralId}
                   </Typography>
                 </Box>
 
@@ -455,6 +395,7 @@ export default function ReferUser() {
                   </Box>
                   <Typography variant="body1" color="rgba(255,255,255,0.6)" sx={{ mt: 1 }}>
                     null
+                    {referredBy || 'None'}
                   </Typography>
                 </Box>
               </CardContent>
@@ -468,6 +409,7 @@ export default function ReferUser() {
                     <Group sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="primary.main">
                       {mockReferralData.totalReferrals}
+                      {totalReferrals}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
                       Total Referrals
@@ -481,6 +423,7 @@ export default function ReferUser() {
                     <CheckCircle sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="success.main">
                       {mockReferralData.activeReferrals}
+                      {activeReferrals}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
                       Active Referrals
@@ -494,6 +437,7 @@ export default function ReferUser() {
                     <AttachMoney sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="warning.main">
                       ${mockReferralData.totalCommissions.toLocaleString()}
+                      ${totalCommissions.toLocaleString()}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
                       Total Earned
@@ -507,6 +451,7 @@ export default function ReferUser() {
                     <Schedule sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="info.main">
                       ${mockReferralData.pendingCommissions.toLocaleString()}
+                      ${pendingCommissions.toLocaleString()}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
                       Pending
@@ -633,65 +578,65 @@ export default function ReferUser() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {mockReferralList.map((referral) => (
-                        <TableRow 
-                          key={referral.id}
-                          sx={{ 
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
-                            borderBottom: '1px solid rgba(255,255,255,0.1)'
-                          }}
-                        >
-                          <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.9rem' }}>
-                                {referral.clientName.charAt(0)}
-                              </Avatar>
-                              <Box>
-                                <Typography variant="body2" fontWeight={600}>
-                                  {referral.clientName}
-                                </Typography>
-                                <Typography variant="caption" color="rgba(255,255,255,0.6)">
-                                  {referral.country}
-                                </Typography>
-                              </Box>
+                    {referralList.map((referral) => (
+                      <TableRow 
+                        key={referral.id}
+                        sx={{ 
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+                          borderBottom: '1px solid rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.9rem' }}>
+                              {referral.clientName.charAt(0)}
+                            </Avatar>
+                            <Box>
+                              <Typography variant="body2" fontWeight={600}>
+                                {referral.clientName}
+                              </Typography>
+                              <Typography variant="caption" color="rgba(255,255,255,0.6)">
+                                {referral.country}
+                              </Typography>
                             </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={referral.refLevel}
-                              size="small"
-                              color="info"
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                            {referral.parent}
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={referral.clientStatus}
-                              size="small"
-                              color={getStatusColor(referral.clientStatus)}
-                              sx={{ fontWeight: 600 }}
-                            />
-                          </TableCell>
-                          <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                            {new Date(referral.dateRegistered).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={() => {
-                                setSelectedReferral(referral);
-                                setDetailsDialogOpen(true);
-                              }}
-                              sx={{ color: 'primary.main' }}
-                              size="small"
-                            >
-                              <Visibility />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={referral.refLevel}
+                            size="small"
+                            color="info"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                          {referral.parent}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={referral.clientStatus}
+                            size="small"
+                            color={getStatusColor(referral.clientStatus)}
+                            sx={{ fontWeight: 600 }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                          {new Date(referral.dateRegistered).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            onClick={() => {
+                              setSelectedReferral(referral);
+                              setDetailsDialogOpen(true);
+                            }}
+                            sx={{ color: 'primary.main' }}
+                            size="small"
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                     </TableBody>
                   </Table>
                 </TableContainer>
