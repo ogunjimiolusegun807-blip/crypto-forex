@@ -250,6 +250,38 @@ export default function NFTGallery() {
           </Stack>
         </Box>
 
+        {/* Activities Card - NFT Actions */}
+        <Card sx={{ mb: 4, bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
+              Your NFT Activities
+            </Typography>
+            {(user?.nftActivities && user.nftActivities.length > 0) ? (
+              <Stack spacing={2}>
+                {user.nftActivities.map((activity, idx) => (
+                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar src={activity.image} alt={activity.name} sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
+                      <Star />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body1" fontWeight="bold" color="#fff">
+                        {activity.action} - {activity.name}
+                      </Typography>
+                      <Typography variant="body2" color="rgba(255,255,255,0.7)">
+                        {activity.date} | {activity.details}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            ) : (
+              <Typography variant="body2" color="rgba(255,255,255,0.7)">
+                No NFT activities yet. Your NFT purchases, bids, and favorites will appear here as you interact with the gallery.
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Page Title */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography variant="h3" gutterBottom fontWeight="bold" color="primary">
