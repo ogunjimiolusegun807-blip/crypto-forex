@@ -18,7 +18,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -41,6 +40,7 @@ import {
   LinearProgress,
   CircularProgress
 } from '@mui/material';
+import Alert from '@mui/material/Alert';
 import {
   Person,
   Email,
@@ -643,7 +643,7 @@ export default function ReferUser() {
                   </Table>
                 </TableContainer>
 
-                {mockReferralList.length === 0 && (
+                {referralList.length === 0 && (
                   <Box sx={{ 
                     textAlign: 'center', 
                     py: 6,
