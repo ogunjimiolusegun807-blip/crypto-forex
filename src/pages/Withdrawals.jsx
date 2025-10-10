@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { 
   Typography, 
@@ -12,7 +13,12 @@ import {
   Avatar, 
   Stack, 
   Chip,
-  Container 
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
@@ -43,6 +49,23 @@ export default function Withdrawals() {
   const [accountName, setAccountName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
+  const navigate = useNavigate();
+  const [mailDialogOpen, setMailDialogOpen] = useState(false);
+  const handleMailUsClick = () => setMailDialogOpen(true);
+  const handleMailDialogClose = () => setMailDialogOpen(false);
+  // Dynamic KYC/account status mapping
+  const getAccountStatus = () => {
+    if (!user?.kycStatus || user.kycStatus === 'unverified') {
+      return { label: 'Inactive', color: 'default' };
+    }
+    if (user.kycStatus === 'pending') {
+      return { label: 'Pending', color: 'warning' };
+    }
+    if (user.kycStatus === 'verified') {
+      return { label: 'Active', color: 'success' };
+    }
+    return { label: 'Inactive', color: 'default' };
+  };
 
   if (loading) {
     return (
@@ -132,50 +155,51 @@ export default function Withdrawals() {
             gap: { xs: 1, sm: 1.5 }
           }}
         >
-          <Chip 
-            icon={<VerifiedUserIcon />} 
-            label="KYC" 
-            color="primary" 
-            variant="outlined" 
+          <Chip
+            icon={<VerifiedUserIcon />}
+            label={getAccountStatus().label}
+            color={getAccountStatus().color}
+            variant="outlined"
             size="small"
-            sx={{ 
-              height: { xs: 28, sm: 32 },
-              fontSize: { xs: '0.7rem', sm: '0.8125rem' },
-              fontWeight: 600,
-              '& .MuiChip-icon': {
-                fontSize: { xs: '0.9rem', sm: '1rem' }
-              }
-            }}
+            sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }}
           />
-          <Button 
-            variant="contained" 
-            color="primary" 
-            startIcon={<EmailIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />} 
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<EmailIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />}
             size="small"
-            sx={{ 
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              height: { xs: 32, sm: 36 },
-              px: { xs: 1.5, sm: 2, md: 3 },
-              fontWeight: 600,
-              minWidth: { xs: 'auto', sm: 80 },
-              whiteSpace: 'nowrap'
-            }}
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}
+            onClick={handleMailUsClick}
           >
             Mail Us
           </Button>
-          <Button 
-            variant="contained" 
-            color="secondary" 
-            startIcon={<SettingsIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />} 
+          {/* Mail Us Dialog (local, not external) */}
+          <Dialog open={mailDialogOpen} onClose={handleMailDialogClose} maxWidth="sm" fullWidth>
+            <DialogTitle>Contact Elon Investment</DialogTitle>
+            <DialogContent>
+              <Typography variant="body1" gutterBottom>
+                Welcome to Elon Investment Broker. For professional inquiries, support, or updates, please contact our admin team. We are committed to providing timely updates and support for all our users. Any information sent here will be received by our admin and used to keep you informed about your account and platform updates.
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Email: support@elonbroker.com<br />
+                Phone: +234-800-000-0000<br />
+                Address: 123 Victoria Island, Lagos, Nigeria
+              </Typography>
+              <Alert severity="info" sx={{ mt: 2 }}>
+                You can expect prompt responses and regular updates from our admin team.
+              </Alert>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleMailDialogClose} color="primary" variant="contained">Close</Button>
+            </DialogActions>
+          </Dialog>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<SettingsIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />}
             size="small"
-            sx={{ 
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              height: { xs: 32, sm: 36 },
-              px: { xs: 1.5, sm: 2, md: 3 },
-              fontWeight: 600,
-              minWidth: { xs: 'auto', sm: 80 },
-              whiteSpace: 'nowrap'
-            }}
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}
+            onClick={() => navigate('/dashboard/account-settings')}
           >
             Settings
           </Button>

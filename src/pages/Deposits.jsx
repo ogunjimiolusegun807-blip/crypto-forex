@@ -35,20 +35,20 @@ const tickerData = [
 const depositMethods = [
   {
     name: 'Bitcoin',
-    address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-    qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=bitcoin:1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+    address: 'bc1qeeqx6lvadawv5ltnyyquukgvjnppq2mal7q78p',
+    qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=bitcoin:bc1qeeqx6lvadawv5ltnyyquukgvjnppq2mal7q78p',
     currency: 'BTC',
   },
   {
     name: 'Ethereum',
-    address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-    qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=ethereum:0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+    address: '0xda77aa81Ea9A0736680491739AFf8d29Aa96d9a1',
+    qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=ethereum:0xda77aa81Ea9A0736680491739AFf8d29Aa96d9a1',
     currency: 'ETH',
   },
   {
     name: 'Litecoin',
-    address: 'LcHKZQJQ8Qh6QJQ8Qh6QJQ8Qh6QJQ8Qh6Q',
-    qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=litecoin:LcHKZQJQ8Qh6QJQ8Qh6QJQ8Qh6QJQ8Qh6Q',
+    address: 'ltc1qgx0g38u9jnz8rqerq5feqnf8u3zwjpmyqu2ney',
+    qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=litecoin:ltc1qgx0g38u9jnz8rqerq5feqnf8u3zwjpmyqu2ney',
     currency: 'LTC',
   },
 ];
