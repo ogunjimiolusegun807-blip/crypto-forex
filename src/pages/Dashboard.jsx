@@ -15,7 +15,8 @@ import { useUser } from '../contexts/UserContext';
 import { userAPI } from '../services/api';
 
 export default function Dashboard() {
-  // Show notification if KYC is rejected
+  // Declare dashboardData before use
+  const [dashboardData, setDashboardData] = useState({ balance: 0, deposits: [], withdrawals: [], kycStatus: 'unverified' });
   const [kycRejectedAlert, setKycRejectedAlert] = useState(false);
 
   useEffect(() => {
@@ -31,7 +32,6 @@ export default function Dashboard() {
   const handleMailDialogClose = () => setMailDialogOpen(false);
   const theme = useTheme();
   const { user, loading, refreshStats } = useUser();
-  const [dashboardData, setDashboardData] = useState({ balance: 0, deposits: [], withdrawals: [], kycStatus: 'unverified' });
   const [dashboardLoading, setDashboardLoading] = useState(true);
 
   // Helper for KYC/account status mapping
