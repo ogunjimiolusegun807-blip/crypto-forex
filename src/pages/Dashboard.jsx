@@ -88,7 +88,6 @@ export default function Dashboard() {
             size="small"
             sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }}
           />
-          <Button variant="contained" color="primary" startIcon={<EmailIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />} size="small" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}>Mail Us</Button>
           <Button
             variant="contained"
             color="primary"
