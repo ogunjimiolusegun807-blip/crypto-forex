@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 import {
   Typography,
   Box,
@@ -231,6 +232,65 @@ export default function SubscribeSignals() {
   const [subscribeDialog, setSubscribeDialog] = useState(false);
   const [accountBalance] = useState(0.00); // This would come from your state management
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
+  const [signalsHistory, setSignalsHistory] = useState([]);
+  const [notification, setNotification] = useState({ open: false, type: '', message: '' });
+  // Fetch user's signal history from backend
+  useEffect(() => {
+    const fetchSignals = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await userAPI.getSignals(token);
+        setSignalsHistory(res.signals || []);
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchSignals();
+  }, [user]);
+  const handleSubscribeSignal = async (plan) => {
+    setSelectedPlan(plan);
+    setSubscribeDialog(true);
+  };
+
+  const handleConfirmSubscribe = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      await userAPI.subscribeSignal(selectedPlan.id, token);
+      setNotification({ open: true, type: 'success', message: `Successfully subscribed to ${selectedPlan.name}` });
+      setSubscribeDialog(false);
+      // Refresh signals history
+      const res = await userAPI.getSignals(token);
+      setSignalsHistory(res.signals || []);
+      // Deduct price from dashboard balance
+      if (window.location.pathname.includes('dashboard')) {
+        window.location.reload();
+      }
+    } catch (err) {
+      setNotification({ open: true, type: 'error', message: err.message || 'Signal subscription failed.' });
+    }
+  };
+      {/* Notification Alert */}
+      {notification.open && (
+        <Alert severity={notification.type} sx={{ mb: 2 }} onClose={() => setNotification({ ...notification, open: false })}>
+          {notification.message}
+        </Alert>
+      )}
+      {/* User's Signal History */}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 1 } }>Your Signal Subscription History</Typography>
+        <List>
+          {signalsHistory.length === 0 ? (
+            <ListItem><ListItemText primary="No signals subscribed yet." /></ListItem>
+          ) : (
+            signalsHistory.map((signal, idx) => (
+              <ListItem key={idx}>
+                <ListItemIcon><NotificationsActive /></ListItemIcon>
+                <ListItemText primary={`Signal ID: ${signal.signalId}`} secondary={`Date: ${new Date(signal.date).toLocaleString()}`} />
+              </ListItem>
+            ))
+          )}
+        </List>
+      </Box>
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
   // Helper for KYC/account status mapping
@@ -253,17 +313,6 @@ export default function SubscribeSignals() {
   const handleSubscribe = (plan) => {
     setSelectedPlan(plan);
     setSubscribeDialog(true);
-  };
-
-  const handleConfirmSubscribe = () => {
-    if (accountBalance < selectedPlan.price) {
-      // Handle insufficient funds
-      alert('Insufficient balance. Please deposit funds to subscribe.');
-    } else {
-      // Handle successful subscription
-      alert(`Successfully subscribed to ${selectedPlan.name}!`);
-      setSubscribeDialog(false);
-    }
   };
 
   if (loading) {

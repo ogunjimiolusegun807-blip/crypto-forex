@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 import {
   Typography,
   Box,
@@ -126,6 +127,21 @@ export default function BuyPlan() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
+  const [plansHistory, setPlansHistory] = useState([]);
+  const [notification, setNotification] = useState({ open: false, type: '', message: '' });
+  // Fetch user's plan history from backend
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await userAPI.getPlans(token);
+        setPlansHistory(res.plans || []);
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchPlans();
+  }, [user]);
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
   // Helper for KYC/account status mapping
@@ -150,17 +166,43 @@ export default function BuyPlan() {
     setInvestDialogOpen(true);
   };
 
-  const handleConfirmInvestment = () => {
-    // Here you would implement the actual investment logic
-    console.log('Investment:', {
-      plan: selectedPlan,
-      amount: investAmount,
-      paymentMethod: paymentMethod
-    });
-    setInvestDialogOpen(false);
-    setInvestAmount('');
-    setPaymentMethod('');
+  const handleConfirmInvestment = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      await userAPI.buyPlan(selectedPlan.id, token);
+      setNotification({ open: true, type: 'success', message: `Successfully purchased ${selectedPlan.name}` });
+      setInvestDialogOpen(false);
+      setInvestAmount('');
+      setPaymentMethod('');
+      // Refresh plans history
+      const res = await userAPI.getPlans(token);
+      setPlansHistory(res.plans || []);
+    } catch (err) {
+      setNotification({ open: true, type: 'error', message: err.message || 'Plan purchase failed.' });
+    }
   };
+      {/* Notification Alert */}
+      {notification.open && (
+        <Alert severity={notification.type} sx={{ mb: 2 }} onClose={() => setNotification({ ...notification, open: false })}>
+          {notification.message}
+        </Alert>
+      )}
+      {/* User's Plan History */}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 1 } }>Your Plan History</Typography>
+        <List>
+          {plansHistory.length === 0 ? (
+            <ListItem><ListItemText primary="No plans purchased yet." /></ListItem>
+          ) : (
+            plansHistory.map((plan, idx) => (
+              <ListItem key={idx}>
+                <ListItemIcon><Star /></ListItemIcon>
+                <ListItemText primary={`Plan ID: ${plan.planId}`} secondary={`Date: ${new Date(plan.date).toLocaleString()}`} />
+              </ListItem>
+            ))
+          )}
+        </List>
+      </Box>
 
   if (loading) {
     return (
@@ -525,26 +567,7 @@ export default function BuyPlan() {
                   }}
                 />
 
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel sx={{ color: 'rgba(255,255,255,0.7)' }}>Payment Method</InputLabel>
-                  <Select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    sx={{
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.23)' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
-                      '& .MuiSelect-select': { color: '#fff' },
-                      '& .MuiSvgIcon-root': { color: '#fff' }
-                    }}
-                  >
-                    <MenuItem value="bitcoin">Bitcoin (BTC)</MenuItem>
-                    <MenuItem value="ethereum">Ethereum (ETH)</MenuItem>
-                    <MenuItem value="usdt">Tether (USDT)</MenuItem>
-                    <MenuItem value="bank">Bank Transfer</MenuItem>
-                    <MenuItem value="card">Credit/Debit Card</MenuItem>
-                  </Select>
-                </FormControl>
+                {/* Payment method removed as requested */}
               </Box>
             )}
           </DialogContent>
@@ -556,7 +579,7 @@ export default function BuyPlan() {
             <Button
               onClick={handleConfirmInvestment}
               variant="contained"
-              disabled={!investAmount || !paymentMethod}
+              disabled={!investAmount}
               sx={{ fontWeight: 700 }}
             >
               Confirm Investment

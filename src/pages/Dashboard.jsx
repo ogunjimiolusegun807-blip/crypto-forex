@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Alert, Typography, Button, Box, Grid, Card, useTheme, Avatar, Stack, Chip } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -13,63 +12,100 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 
 export default function Dashboard() {
+  // Show notification if KYC is rejected
+  const [kycRejectedAlert, setKycRejectedAlert] = useState(false);
+
+  useEffect(() => {
+    if (dashboardData.kycStatus === 'rejected') {
+      setKycRejectedAlert(true);
+    } else {
+      setKycRejectedAlert(false);
+    }
+  }, [dashboardData.kycStatus]);
   const navigate = useNavigate();
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
+  const theme = useTheme();
+  const { user, loading, refreshStats } = useUser();
+  const [dashboardData, setDashboardData] = useState({ balance: 0, deposits: [], withdrawals: [], kycStatus: 'unverified' });
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+
   // Helper for KYC/account status mapping
   const getAccountStatus = () => {
-    if (!user?.kycStatus || user.kycStatus === 'unverified') {
-      return { label: 'Inactive', color: 'default' };
+    if (!dashboardData.kycStatus || dashboardData.kycStatus === 'unverified' || dashboardData.kycStatus === 'not_submitted') {
+      return { label: 'Inactive', color: 'default', chip: { label: 'INACTIVE', color: 'default' } };
     }
-    if (user.kycStatus === 'pending') {
-      return { label: 'Pending', color: 'warning' };
+    if (dashboardData.kycStatus === 'pending') {
+      return { label: 'Pending', color: 'warning', chip: { label: 'PENDING', color: 'warning' } };
     }
-    if (user.kycStatus === 'verified') {
-      return { label: 'Active', color: 'success' };
+    if (dashboardData.kycStatus === 'verified' || dashboardData.kycStatus === 'approved') {
+      return { label: 'Active', color: 'success', chip: { label: 'ACTIVE', color: 'success' } };
     }
-    return { label: 'Inactive', color: 'default' };
+    if (dashboardData.kycStatus === 'rejected') {
+      return { label: 'Rejected', color: 'error', chip: { label: 'REJECTED', color: 'error' } };
+    }
+    return { label: 'Inactive', color: 'default', chip: { label: 'INACTIVE', color: 'default' } };
   };
-  const theme = useTheme();
-  const { user, loading } = useUser();
-  // Use real user data if available
-  const userStats = {
-    totalBalance: user?.totalBalance || 0,
-    profit: user?.profit || 0,
-    totalBonus: user?.totalBonus || 0,
-    accountStatus: user?.accountStatus || 'active',
-    totalTrades: user?.totalTrades || 0,
-    openTrades: user?.openTrades || 0,
-    closedTrades: user?.closedTrades || 0,
-    winLossRatio: user?.winLossRatio || 0
-  };
-  const tickerData = [
-    { label: 'BTC/USDT', value: '$38,500', change: '+1.2%', color: '#4caf50' },
-    { label: 'ETH/USDT', value: '$2,450', change: '-0.6%', color: '#f44336' },
-    { label: 'BNB/USDT', value: '$310', change: '+0.4%', color: '#4caf50' },
-    { label: 'SOL/USDT', value: '$105', change: '+2.1%', color: '#4caf50' },
-    { label: 'XRP/USDT', value: '$0.62', change: '-0.3%', color: '#f44336' }
-  ];
+
+  // Fetch dashboard data from backend
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setDashboardLoading(true);
+      try {
+        const token = localStorage.getItem('authToken');
+        const profile = await userAPI.getProfile(token);
+        const deposits = await userAPI.getDeposits(token);
+        const withdrawals = await userAPI.getWithdrawals(token);
+        const kyc = await userAPI.getKYC(token);
+        setDashboardData({
+          balance: profile.balance || 0,
+          deposits: deposits.deposits || [],
+          withdrawals: withdrawals.withdrawals || [],
+          kycStatus: kyc.kycStatus || profile.kycStatus || 'unverified',
+        });
+      } catch (err) {
+        // Optionally handle error
+      } finally {
+        setDashboardLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, [user]);
+
+  // Cards use dashboardData
   const cardGradient = 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)';
   const topCards = [
-    { label: 'Total Balance', value: `$${userStats.totalBalance.toLocaleString()}`, icon: <AccountBalanceWalletIcon />, gradient: cardGradient },
-    { label: 'Profit', value: `$${userStats.profit.toLocaleString()}`, icon: <ShowChartIcon />, gradient: cardGradient },
-    { label: 'Total Bonus', value: `$${userStats.totalBonus.toLocaleString()}`, icon: <GroupIcon />, gradient: cardGradient },
-    { label: 'Account Status', value: userStats.accountStatus.toUpperCase(), icon: <VerifiedUserIcon />, gradient: cardGradient, chip: true }
+    { label: 'Total Balance', value: `$${dashboardData.balance.toLocaleString()}`, icon: <AccountBalanceWalletIcon />, gradient: cardGradient },
+    { label: 'Deposits', value: `${dashboardData.deposits.length}`, icon: <ShowChartIcon />, gradient: cardGradient },
+    { label: 'Withdrawals', value: `${dashboardData.withdrawals.length}`, icon: <HistoryIcon />, gradient: cardGradient },
+    {
+      label: 'Account Status',
+      value: getAccountStatus().label.toUpperCase(),
+      icon: <VerifiedUserIcon />,
+      gradient: cardGradient,
+      chip: true,
+      chipLabel: getAccountStatus().chip.label,
+      chipColor: getAccountStatus().chip.color
+    }
   ];
   const bottomCards = [
-    { label: 'Total Trades', value: userStats.totalTrades.toString(), icon: <ShowChartIcon />, gradient: cardGradient },
-    { label: 'Open Trades', value: userStats.openTrades.toString(), icon: <FolderOpenIcon />, gradient: cardGradient },
-    { label: 'Closed Trades', value: userStats.closedTrades.toString(), icon: <HistoryIcon />, gradient: cardGradient },
-    { label: 'Win/Loss Ratio', value: `${(userStats.winLossRatio * 100).toFixed(1)}%`, icon: <EmojiEventsIcon />, gradient: cardGradient }
+    // You can add more stats here if needed
   ];
-  if (loading) {
+  if (dashboardLoading) {
     return <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: theme.palette.background.default }}><Typography variant="h6">Loading dashboard...</Typography></Box>;
   }
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+      {/* KYC Rejected Alert */}
+      {kycRejectedAlert && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setKycRejectedAlert(false)}>
+          Your KYC submission was rejected by admin. Please review your details and resubmit.
+        </Alert>
+      )}
       {/* Header with site name, username and quick actions */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, bgcolor: '#232742', p: { xs: 1.5, sm: 2, md: 2.5 }, borderRadius: 3, boxShadow: 3, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1.5, sm: 2, md: 0 }, minHeight: { xs: 'auto', sm: 80 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5, md: 2 }, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
@@ -151,7 +187,26 @@ export default function Dashboard() {
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="h6" fontWeight={700} sx={{ color: '#fff', fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.4rem' }, lineHeight: 1.2, mb: 0.5 }}>{card.value}</Typography>
                 <Typography variant="subtitle2" fontWeight={500} sx={{ color: '#fff', opacity: 0.9, fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' }, lineHeight: 1.2 }}>{card.label}</Typography>
-                {card.chip && (<Box sx={{ mt: 1 }}><Chip label="ACTIVE" color="success" size="small" sx={{ bgcolor: '#fff', color: '#4caf50', fontWeight: 700, height: { xs: 22, sm: 24 }, fontSize: { xs: '0.65rem', sm: '0.75rem' }, '& .MuiChip-label': { px: { xs: 1, sm: 1.5 } } }} /></Box>)}
+                {card.chip && (
+                  <Box sx={{ mt: 1 }}>
+                    <Chip
+                      label={card.chipLabel || 'STATUS'}
+                      color={card.chipColor || 'default'}
+                      size="small"
+                      sx={{
+                        bgcolor: '#fff',
+                        color:
+                          card.chipColor === 'success' ? '#4caf50' :
+                          card.chipColor === 'error' ? '#d32f2f' :
+                          card.chipColor === 'warning' ? '#ed6c02' : '#232742',
+                        fontWeight: 700,
+                        height: { xs: 22, sm: 24 },
+                        fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                        '& .MuiChip-label': { px: { xs: 1, sm: 1.5 } }
+                      }}
+                    />
+                  </Box>
+                )}
               </Box>
             </Card>
           </Grid>

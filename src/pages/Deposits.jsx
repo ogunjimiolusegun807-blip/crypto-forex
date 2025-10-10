@@ -24,6 +24,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useTheme } from '@mui/material/styles';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 
 const tickerData = [
   { label: 'Nasdaq 100', value: '24,344.8', change: '+98.90 (+0.41%)', color: 'success.main' },
@@ -54,6 +55,7 @@ const depositMethods = [
 ];
 
 export default function Deposits() {
+  const [depositSuccess, setDepositSuccess] = useState(null);
   const { user, loading, error } = useUser();
   const theme = useTheme();
   const navigate = useNavigate();
@@ -77,6 +79,8 @@ export default function Deposits() {
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [amount, setAmount] = useState('');
   const [proof, setProof] = useState(null);
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositError, setDepositError] = useState(null);
 
   // Remove hardcoded user, use context
 
@@ -90,6 +94,28 @@ export default function Deposits() {
     setSelectedMethod(null);
     setAmount('');
     setProof(null);
+    setDepositError(null);
+  };
+
+  // Handle deposit submit
+  const handleDepositSubmit = async () => {
+    setDepositLoading(true);
+    setDepositError(null);
+    setDepositSuccess(null);
+    try {
+      const token = localStorage.getItem('authToken');
+      await userAPI.deposit(Number(amount), token);
+      setDepositSuccess('Deposit submitted successfully!');
+      setTimeout(() => {
+        setDepositSuccess(null);
+        handleCloseModal();
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      setDepositError(err.message || 'Deposit failed');
+    } finally {
+      setDepositLoading(false);
+    }
   };
 
   if (loading) {
@@ -108,8 +134,14 @@ export default function Deposits() {
   }
   return (
     <Container maxWidth="xl">
-      <Box sx={{ 
-        p: { xs: 1, sm: 2, md: 3 }, 
+      {/* Deposit Success Notification */}
+      {depositSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setDepositSuccess(null)}>
+          {depositSuccess}
+        </Alert>
+      )}
+      <Box sx={{
+        p: { xs: 1, sm: 2, md: 3 },
         minHeight: '100vh',
         bgcolor: theme.palette.background.default
       }}>
@@ -581,15 +613,19 @@ export default function Deposits() {
                 <Button 
                   variant="contained" 
                   color="primary" 
-                  onClick={handleCloseModal}
+                  onClick={handleDepositSubmit}
                   fullWidth
+                  disabled={depositLoading || !amount}
                   sx={{ 
                     fontWeight: 600,
                     py: { xs: 1, sm: 1.25 }
                   }}
                 >
-                  Submit
+                  {depositLoading ? 'Processing...' : 'Submit'}
                 </Button>
+                {depositError && (
+                  <Alert severity="error" sx={{ mt: 2 }}>{depositError}</Alert>
+                )}
               </Box>
             </>
           ) : selectedMethod === 'other' ? (

@@ -43,7 +43,108 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
-  // Add getStats, updateProfile, etc. as needed
+  deposit: async (amount, token) => {
+    const res = await fetch(`${BASE_URL}/api/user/deposit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ amount })
+    });
+    return await handleResponse(res);
+  },
+  getDeposits: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/user/deposits`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  withdrawal: async (amount, token) => {
+    const res = await fetch(`${BASE_URL}/api/user/withdrawal`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ amount })
+    });
+    return await handleResponse(res);
+  },
+  getWithdrawals: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/user/withdrawals`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  submitKYC: async (kycData, token) => {
+    const res = await fetch(`${BASE_URL}/api/user/kyc`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ kycData })
+    });
+    return await handleResponse(res);
+  },
+  getKYC: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/user/kyc`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  buyPlan: async (planId, token) => {
+    const res = await fetch(`${BASE_URL}/api/user/plan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ planId })
+    });
+    return await handleResponse(res);
+  },
+  getPlans: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/user/plans`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  subscribeSignal: async (signalId, token) => {
+    const res = await fetch(`${BASE_URL}/api/user/signal/subscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ signalId })
+    });
+    return await handleResponse(res);
+  },
+  getSignals: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/user/signals`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  getSettings: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/user/settings`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  updateSettings: async (settings, token) => {
+    const res = await fetch(`${BASE_URL}/api/user/settings`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ settings })
+    });
+    return await handleResponse(res);
+  },
 };
 
 export const marketAPI = {

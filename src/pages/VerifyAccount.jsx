@@ -166,13 +166,28 @@ export default function VerifyAccount() {
 
   const confirmSubmit = () => {
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitDialog(false);
-      alert('KYC verification submitted successfully! We will review your documents and update your account status within 24-48 hours.');
-    }, 2000);
+    const token = localStorage.getItem('authToken');
+    const kycData = {
+      ...formData,
+      identityDocument: uploadedFiles.identityDocument,
+      addressDocument: uploadedFiles.addressDocument,
+      selfiePhoto: uploadedFiles.selfiePhoto
+    };
+    // Remove file objects for now, only send text fields (backend should be updated for file uploads)
+    const kycPayload = { ...formData };
+    userAPI.submitKYC(kycPayload, token)
+      .then(() => {
+        setLoading(false);
+        setSubmitDialog(false);
+        alert('KYC verification submitted successfully! We will review your documents and update your account status within 24-48 hours.');
+        // Optionally, trigger user context refresh here
+        window.location.reload(); // reload to update status in context/dashboard
+      })
+      .catch((err) => {
+        setLoading(false);
+        setSubmitDialog(false);
+        alert('Failed to submit KYC: ' + (err.message || 'Unknown error'));
+      });
   };
 
   const steps = [

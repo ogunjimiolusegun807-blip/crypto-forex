@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 import {
   Typography,
   Box,
@@ -117,6 +118,22 @@ export default function AccountSettings() {
     twoFactorAuth: true,
     loginAlerts: true
   });
+  const [notification, setNotification] = useState({ open: false, type: '', message: '' });
+  // Fetch user settings from backend
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await userAPI.getSettings(token);
+        if (res.settingsActivities && res.settingsActivities.length > 0) {
+          setAccountSettings(res.settingsActivities[res.settingsActivities.length - 1].settings);
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchSettings();
+  }, [user]);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -134,6 +151,16 @@ export default function AccountSettings() {
       ...prev,
       [setting]: event.target.checked
     }));
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      await userAPI.updateSettings(accountSettings, token);
+      setNotification({ open: true, type: 'success', message: 'Settings updated successfully.' });
+    } catch (err) {
+      setNotification({ open: true, type: 'error', message: err.message || 'Settings update failed.' });
+    }
   };
 
   const togglePasswordVisibility = (field) => {
@@ -188,6 +215,12 @@ export default function AccountSettings() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+      {/* Notification Alert */}
+      {notification.open && (
+        <Alert severity={notification.type} sx={{ mb: 2 }} onClose={() => setNotification({ ...notification, open: false })}>
+          {notification.message}
+        </Alert>
+      )}
       <Container maxWidth="xl" sx={{ p: { xs: 1, sm: 3 } }}>
         {/* Header */}
         <Box sx={{ 
@@ -437,6 +470,11 @@ export default function AccountSettings() {
                           }}
                         />
                       </Grid>
+                      <Box sx={{ mt: 3, textAlign: 'center' }}>
+                        <Button variant="contained" color="primary" onClick={handleSaveSettings}>
+                          Save Settings
+                        </Button>
+                      </Box>
                       
                       <Grid item xs={12} sm={6}>
                         <TextField

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 import { 
   Typography, 
   Box, 
@@ -41,6 +42,8 @@ const withdrawalOptions = [
 ];
 
 export default function Withdrawals() {
+  const [withdrawalSuccess, setWithdrawalSuccess] = useState(null);
+  const [withdrawalError, setWithdrawalError] = useState(null);
   const theme = useTheme();
   const { user, loading, error } = useUser();
   const [withdrawalType, setWithdrawalType] = useState('');
@@ -474,9 +477,37 @@ export default function Withdrawals() {
               fontSize: { xs: '1rem', sm: '1.1rem' },
               mt: 1
             }}
+            disabled={!amount}
+            onClick={async () => {
+              setWithdrawalSuccess(null);
+              setWithdrawalError(null);
+              try {
+                const token = localStorage.getItem('authToken');
+                await userAPI.withdrawal(Number(amount), token);
+                setWithdrawalSuccess('Withdrawal request submitted successfully!');
+                setTimeout(() => {
+                  setWithdrawalSuccess(null);
+                  window.location.reload();
+                }, 2000);
+              } catch (err) {
+                setWithdrawalError(err.message || 'Withdrawal failed');
+              }
+            }}
           >
             Request Withdrawal
           </Button>
+          {/* Withdrawal Success Notification */}
+          {withdrawalSuccess && (
+            <Alert severity="success" sx={{ mt: 2 }} onClose={() => setWithdrawalSuccess(null)}>
+              {withdrawalSuccess}
+            </Alert>
+          )}
+          {/* Withdrawal Error Notification */}
+          {withdrawalError && (
+            <Alert severity="error" sx={{ mt: 2 }} onClose={() => setWithdrawalError(null)}>
+              {withdrawalError}
+            </Alert>
+          )}
         </Card>
       </Box>
       </Box>
