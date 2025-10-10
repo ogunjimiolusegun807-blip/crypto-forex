@@ -82,7 +82,7 @@ export default function CopyTrading() {
     return { label: 'Inactive', color: 'default' };
   };
   const navigateToSettings = () => {
-    navigate('/account-settings');
+    navigate('/dashboard/account-settings');
   };
 
   // Mock data for top traders - More realistic live trader data
