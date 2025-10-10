@@ -11,7 +11,12 @@ import {
   Avatar, 
   Stack, 
   Chip,
-  Container 
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
