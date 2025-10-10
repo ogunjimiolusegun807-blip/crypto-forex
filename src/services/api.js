@@ -43,14 +43,13 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
-  deposit: async (amount, token) => {
+  deposit: async (formData, token) => {
     const res = await fetch(`${BASE_URL}/api/user/deposit`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ amount })
+      body: formData
     });
     return await handleResponse(res);
   },

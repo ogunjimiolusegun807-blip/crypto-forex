@@ -104,7 +104,12 @@ export default function Deposits() {
     setDepositSuccess(null);
     try {
       const token = localStorage.getItem('authToken');
-      await userAPI.deposit(Number(amount), token);
+      const formData = new FormData();
+      formData.append('amount', amount);
+      if (proof) {
+        formData.append('proof', proof);
+      }
+      await userAPI.deposit(formData, token);
       setDepositSuccess('Deposit submitted successfully!');
       setTimeout(() => {
         setDepositSuccess(null);
