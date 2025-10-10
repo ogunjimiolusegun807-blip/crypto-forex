@@ -45,97 +45,6 @@ import {
   AttachMoney
 } from '@mui/icons-material';
 
-// Mock transaction data
-const mockTransactions = [
-  {
-    id: 'TXN001',
-    date: '2024-03-15',
-    time: '14:30:25',
-    type: 'Deposit',
-    description: 'Bitcoin Deposit',
-    amount: '+$1,500.00',
-    status: 'Completed',
-    balance: '$12,500.00',
-    reference: 'DEP-BTC-001'
-  },
-  {
-    id: 'TXN002',
-    date: '2024-03-14',
-    time: '09:15:42',
-    type: 'Trade',
-    description: 'BTC/USDT Buy Order',
-    amount: '-$850.00',
-    status: 'Completed',
-    balance: '$11,000.00',
-    reference: 'TRD-BTC-002'
-  },
-  {
-    id: 'TXN003',
-    date: '2024-03-14',
-    time: '08:22:17',
-    type: 'Withdrawal',
-    description: 'Ethereum Withdrawal',
-    amount: '-$750.00',
-    status: 'Pending',
-    balance: '$11,850.00',
-    reference: 'WTD-ETH-003'
-  },
-  {
-    id: 'TXN004',
-    date: '2024-03-13',
-    time: '16:45:33',
-    type: 'Trade',
-    description: 'EUR/USD Position Close',
-    amount: '+$320.50',
-    status: 'Completed',
-    balance: '$12,600.00',
-    reference: 'TRD-EUR-004'
-  },
-  {
-    id: 'TXN005',
-    date: '2024-03-12',
-    time: '11:20:08',
-    type: 'Deposit',
-    description: 'Wire Transfer',
-    amount: '+$2,000.00',
-    status: 'Completed',
-    balance: '$12,279.50',
-    reference: 'DEP-WIRE-005'
-  },
-  {
-    id: 'TXN006',
-    date: '2024-03-11',
-    time: '13:15:22',
-    type: 'Trade',
-    description: 'AAPL Stock Purchase',
-    amount: '-$1,200.00',
-    status: 'Completed',
-    balance: '$10,279.50',
-    reference: 'TRD-AAPL-006'
-  },
-  {
-    id: 'TXN007',
-    date: '2024-03-10',
-    time: '10:30:15',
-    type: 'Bonus',
-    description: 'Welcome Bonus',
-    amount: '+$100.00',
-    status: 'Completed',
-    balance: '$11,479.50',
-    reference: 'BON-WEL-007'
-  },
-  {
-    id: 'TXN008',
-    date: '2024-03-09',
-    time: '15:45:30',
-    type: 'Withdrawal',
-    description: 'Bank Transfer',
-    amount: '-$500.00',
-    status: 'Failed',
-    balance: '$11,379.50',
-    reference: 'WTD-BANK-008'
-  }
-];
 
 const getTypeIcon = (type) => {
   switch (type) {
@@ -175,12 +84,13 @@ export default function AccountHistory() {
   };
 
   // Filter transactions based on search and filters
-  const filteredTransactions = mockTransactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.reference.toLowerCase().includes(searchQuery.toLowerCase());
+  // Use user's trade history or empty array
+  const transactions = user?.tradeHistory || [];
+  const filteredTransactions = transactions.filter(transaction => {
+    const matchesSearch = transaction.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         transaction.reference?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === '' || transaction.type === filterType;
     const matchesStatus = filterStatus === '' || transaction.status === filterStatus;
-    
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -271,7 +181,7 @@ export default function AccountHistory() {
         </Stack>
       </Box>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - use real user data if available */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ 
@@ -285,7 +195,7 @@ export default function AccountHistory() {
                 <TrendingUp color="success" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h5" fontWeight="bold" color="success.main">
-                    $4,120.50
+                    ${user?.totalDeposits?.toLocaleString() || '0.00'}
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
                     Total Deposits
@@ -307,7 +217,7 @@ export default function AccountHistory() {
                 <TrendingDown color="error" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h5" fontWeight="bold" color="error.main">
-                    $1,250.00
+                    ${user?.totalWithdrawals?.toLocaleString() || '0.00'}
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
                     Total Withdrawals
@@ -329,7 +239,7 @@ export default function AccountHistory() {
                 <SwapHoriz color="primary" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h5" fontWeight="bold" color="primary.main">
-                    24
+                    {user?.totalTrades?.toLocaleString() || '0'}
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
                     Total Trades
@@ -351,7 +261,7 @@ export default function AccountHistory() {
                 <AccountBalanceWallet color="warning" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h5" fontWeight="bold" color="#fff">
-                    $12,500.00
+                    ${user?.balance?.toLocaleString() || '0.00'}
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
                     Current Balance
@@ -487,67 +397,75 @@ export default function AccountHistory() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedTransactions.map((transaction) => (
-                <TableRow key={transaction.id} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
-                  <TableCell>
-                    <Box>
-                      <Typography color="#fff" fontWeight={600} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                        {transaction.date}
-                      </Typography>
-                      <Typography variant="caption" color="rgba(255,255,255,0.6)" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                        {transaction.time}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getTypeIcon(transaction.type)}
-                      <Typography color="#fff" fontWeight={600} sx={{ 
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                        display: { xs: 'none', sm: 'block' }
-                      }}>
-                        {transaction.type}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    <Typography color="#fff" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                      {transaction.description}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography
-                      color={transaction.amount.startsWith('+') ? 'success.main' : 'error.main'}
-                      fontWeight="bold"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      {transaction.amount}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={transaction.status}
-                      color={getStatusColor(transaction.status)}
-                      size="small"
-                      sx={{ 
-                        fontWeight: 600,
-                        fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                        height: { xs: 20, sm: 24 }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                    <Typography variant="body2" color="rgba(255,255,255,0.8)" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
-                      {transaction.reference}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    <Typography color="#fff" fontWeight={600} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                      {transaction.balance}
-                    </Typography>
+              {paginatedTransactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No activities yet. Your trades and transactions will appear here as you perform actions.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                paginatedTransactions.map((transaction) => (
+                  <TableRow key={transaction.id} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
+                    <TableCell>
+                      <Box>
+                        <Typography color="#fff" fontWeight={600} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {transaction.date}
+                        </Typography>
+                        <Typography variant="caption" color="rgba(255,255,255,0.6)" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                          {transaction.time}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {getTypeIcon(transaction.type)}
+                        <Typography color="#fff" fontWeight={600} sx={{ 
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          display: { xs: 'none', sm: 'block' }
+                        }}>
+                          {transaction.type}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                      <Typography color="#fff" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                        {transaction.description}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography
+                        color={transaction.amount?.startsWith('+') ? 'success.main' : 'error.main'}
+                        fontWeight="bold"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
+                        {transaction.amount}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={transaction.status}
+                        color={getStatusColor(transaction.status)}
+                        size="small"
+                        sx={{ 
+                          fontWeight: 600,
+                          fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                          height: { xs: 20, sm: 24 }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                      <Typography variant="body2" color="rgba(255,255,255,0.8)" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                        {transaction.reference}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                      <Typography color="#fff" fontWeight={600} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                        {transaction.balance}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
