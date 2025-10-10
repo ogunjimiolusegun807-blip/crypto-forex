@@ -188,93 +188,20 @@ const multipliers = [
   { label: 'X10', value: 10, color: 'error' }
 ];
 
-// Mock trade history
-const mockTradeHistory = [
-  {
-    id: 'T001',
-    symbol: 'BTC/USDT',
-    type: 'BUY',
-    multiplier: 'X2',
-    amount: 100,
-    entryPrice: 44500,
-    currentPrice: 45000,
-    pnl: 50,
-    status: 'ACTIVE',
-    timestamp: new Date(Date.now() - 300000)
-  },
-  {
-    id: 'T002',
-    symbol: 'ETH/USDT',
-    type: 'SELL',
-    multiplier: 'X5',
-    amount: 200,
-    entryPrice: 2850,
-    exitPrice: 2800,
-    pnl: 250,
-    status: 'CLOSED',
-    timestamp: new Date(Date.now() - 600000)
-  },
-  {
-    id: 'T003',
-    symbol: 'EUR/USD',
-    type: 'BUY',
-    multiplier: 'X3',
-    amount: 150,
-    entryPrice: 1.0820,
-    exitPrice: 1.0850,
-    pnl: 67.5,
-    status: 'CLOSED',
-    timestamp: new Date(Date.now() - 900000)
-  },
-  {
-    id: 'T004',
-    symbol: 'AAPL',
-    type: 'BUY',
-    multiplier: 'X2',
-    amount: 200,
-    entryPrice: 172.50,
-    currentPrice: 175.50,
-    pnl: 60,
-    status: 'ACTIVE',
-    timestamp: new Date(Date.now() - 1200000)
-  },
-  {
-    id: 'T005',
-    symbol: 'GBP/USD',
-    type: 'SELL',
-    multiplier: 'X3',
-    amount: 180,
-    entryPrice: 1.2800,
-    exitPrice: 1.2750,
-    pnl: 135,
-    status: 'CLOSED',
-    timestamp: new Date(Date.now() - 1800000)
-  },
-  {
-    id: 'T006',
-    symbol: 'TSLA',
-    type: 'BUY',
-    multiplier: 'X5',
-    amount: 250,
-    entryPrice: 240.00,
-    exitPrice: 245.80,
-    pnl: 362.5,
-    status: 'CLOSED',
-    timestamp: new Date(Date.now() - 2400000)
-  }
-];
-
 export default function Trade() {
   const theme = useTheme();
   const { user, loading, error } = useUser();
+
+  // Use real user data for trades and balance
+  const accountBalance = user?.totalBalance ?? 0;
+  const activeTrades = user?.activeTrades ?? [];
+  const tradeHistory = user?.tradeHistory ?? [];
+
   const [selectedAsset, setSelectedAsset] = useState(tradingAssets[0]);
   const [selectedMultiplier, setSelectedMultiplier] = useState(multipliers[0]);
   const [tradeAmount, setTradeAmount] = useState(100);
   const [currentPrice, setCurrentPrice] = useState(selectedAsset.price);
   const [priceChange, setPriceChange] = useState(selectedAsset.change);
-  const [accountBalance, setAccountBalance] = useState(12500.00);
-  const [activeTrades, setActiveTrades] = useState(mockTradeHistory.filter(t => t.status === 'ACTIVE'));
-  const [tradeHistory, setTradeHistory] = useState(mockTradeHistory.filter(t => t.status === 'CLOSED'));
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [confirmDialog, setConfirmDialog] = useState({ open: false, trade: null });
   const [chartWidth, setChartWidth] = useState(900);
