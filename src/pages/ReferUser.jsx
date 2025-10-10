@@ -94,6 +94,26 @@ const referralTiers = [
 ];
 
 export default function ReferUser() {
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const handleSupportClick = () => setSupportDialogOpen(true);
+  const handleSupportDialogClose = () => setSupportDialogOpen(false);
+  const navigate = useTheme().palette ? require('react-router-dom').useNavigate() : () => {};
+  // Helper for KYC/account status mapping
+  const getAccountStatus = () => {
+    if (!user?.kycStatus || user.kycStatus === 'unverified') {
+      return { label: 'Inactive', color: 'default' };
+    }
+    if (user.kycStatus === 'pending') {
+      return { label: 'Pending', color: 'warning' };
+    }
+    if (user.kycStatus === 'verified') {
+      return { label: 'Active', color: 'success' };
+    }
+    return { label: 'Inactive', color: 'default' };
+  };
+  const navigateToSettings = () => {
+    if (typeof navigate === 'function') navigate('/account-settings');
+  };
   const { user, loading, error } = useUser();
   const theme = useTheme();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -201,111 +221,74 @@ export default function ReferUser() {
           gap: { xs: 1.5, sm: 2, md: 0 },
           minHeight: { xs: 'auto', sm: 80 }
         }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: { xs: 1, sm: 1.5, md: 2 },
-            width: { xs: '100%', sm: 'auto' },
-            justifyContent: { xs: 'center', sm: 'flex-start' }
-          }}>
-            <Avatar sx={{ 
-              bgcolor: 'primary.main', 
-              width: { xs: 36, sm: 42, md: 48 }, 
-              height: { xs: 36, sm: 42, md: 48 },
-              flexShrink: 0
-            }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5, md: 2 }, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+            <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 36, sm: 42, md: 48 }, height: { xs: 36, sm: 42, md: 48 }, flexShrink: 0 }}>
               <Group sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.8rem' } }} />
             </Avatar>
             <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-              <Typography 
-                variant="h5"
-                fontWeight={900} 
-                color={theme.palette.primary.main}
-                sx={{ 
-                  fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
-                  lineHeight: 1.2
-                }}
-              >
+              <Typography variant="h5" fontWeight={900} color={theme.palette.primary.main} sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, lineHeight: 1.2 }}>
                 Referral Program
               </Typography>
-              <Typography 
-                variant="h6"
-                fontWeight={700} 
-                color="#fff"
-                sx={{ 
-                  fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1.25rem' },
-                  lineHeight: 1.2,
-                  mt: 0.25
-                }}
-              >
+              <Typography variant="h6" fontWeight={700} color="#fff" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1.25rem' }, lineHeight: 1.2, mt: 0.25 }}>
                 {user?.username ? `Welcome, ${user.username}` : 'Earn with'} <span style={{ color: theme.palette.primary.main }}>Every Referral</span>
               </Typography>
             </Box>
           </Box>
-          
           {/* Action Buttons */}
-          <Stack 
-            direction={{ xs: 'row', sm: 'row' }} 
-            spacing={{ xs: 1, sm: 1.5, md: 2 }} 
-            alignItems="center"
-            sx={{ 
-              width: { xs: '100%', sm: 'auto' },
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              flexWrap: 'wrap',
-              gap: { xs: 1, sm: 1.5 }
-            }}
-          >
-            <Button 
-              variant="contained" 
-              color="primary" 
-              startIcon={<Share />} 
-              onClick={() => setShareDialogOpen(true)}
-              size="small"
-              sx={{ 
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                height: { xs: 32, sm: 36 },
-                px: { xs: 1.5, sm: 2, md: 3 },
-                fontWeight: 600,
-                minWidth: { xs: 'auto', sm: 80 },
-                whiteSpace: 'nowrap'
-              }}
-            >
+          <Stack direction={{ xs: 'row', sm: 'row' }} spacing={{ xs: 1, sm: 1.5, md: 2 }} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' }, flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 } }}>
+            <Button variant="contained" color="primary" startIcon={<Share />} onClick={() => setShareDialogOpen(true)} size="small" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}>
               Share
             </Button>
-            <Button 
-              variant="contained" 
-              color="secondary" 
-              startIcon={<Print />} 
+            <Chip
+              icon={<VerifiedUser />}
+              label={getAccountStatus().label}
+              color={getAccountStatus().color}
+              variant="outlined"
               size="small"
-              sx={{ 
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                height: { xs: 32, sm: 36 },
-                px: { xs: 1.5, sm: 2, md: 3 },
-                fontWeight: 600,
-                minWidth: { xs: 'auto', sm: 80 },
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Print
-            </Button>
-            <Button 
-              variant="contained" 
-              color="info" 
-              startIcon={<Email />} 
+              sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Email sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />}
               size="small"
-              sx={{ 
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                height: { xs: 32, sm: 36 },
-                px: { xs: 1.5, sm: 2, md: 3 },
-                fontWeight: 600,
-                minWidth: { xs: 'auto', sm: 80 },
-                whiteSpace: 'nowrap'
-              }}
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}
+              onClick={handleSupportClick}
             >
               Support
             </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<Settings />}
+              size="small"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}
+              onClick={navigateToSettings}
+            >
+              Settings
+            </Button>
           </Stack>
         </Box>
+        {/* Support Dialog (local, not external) */}
+        <Dialog open={supportDialogOpen} onClose={handleSupportDialogClose} maxWidth="sm" fullWidth>
+          <DialogTitle>Contact Elon Investment</DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" gutterBottom>
+              Welcome to Elon Investment Broker. For professional inquiries, support, or updates, please contact our admin team. We are committed to providing timely updates and support for all our users. Any information sent here will be received by our admin and used to keep you informed about your account and platform updates.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Email: support@elonbroker.com<br />
+              Phone: +234-800-000-0000<br />
+              Address: 123 Victoria Island, Lagos, Nigeria
+            </Typography>
+            <Alert severity="info" sx={{ mt: 2 }}>
+              You can expect prompt responses and regular updates from our admin team.
+            </Alert>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleSupportDialogClose} color="primary" variant="contained">Close</Button>
+          </DialogActions>
+        </Dialog>
 
         <Grid container spacing={3}>
           {/* Main Referral Card */}
