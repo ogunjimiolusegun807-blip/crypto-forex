@@ -81,9 +81,9 @@ export default function AccountSettings() {
   const navigate = useNavigate();
 
   const handleAccountClick = () => navigate('/dashboard');
-  const handleDepositClick = () => navigate('/deposits');
-  const handleWithdrawClick = () => navigate('/withdrawals');
-  const handleSettingsClick = () => navigate('/accountsettings');
+  const handleDepositClick = () => navigate('/dashboard/deposits');
+  const handleWithdrawClick = () => navigate('/dashboard/withdrawals');
+  const handleSettingsClick = () => navigate('/dashboard/account-settings');
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
   const theme = useTheme();
