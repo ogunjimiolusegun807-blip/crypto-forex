@@ -33,7 +33,7 @@ import {
   Stack,
   useTheme
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
 import {
   TrendingUp,
   TrendingDown,
@@ -58,28 +58,11 @@ function TabPanel({ children, value, index }) {
 export default function CopyTrading() {
   const { user, loading, error } = useUser();
   const theme = useTheme();
-  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [selectedTrader, setSelectedTrader] = useState(null);
   const [copyAmount, setCopyAmount] = useState('');
   const [riskLevel, setRiskLevel] = useState('medium');
-  const [mailDialogOpen, setMailDialogOpen] = useState(false);
-  const handleMailUsClick = () => setMailDialogOpen(true);
-  const handleMailDialogClose = () => setMailDialogOpen(false);
-  // Helper for KYC/account status mapping
-  const getAccountStatus = () => {
-    if (!user?.kycStatus || user.kycStatus === 'unverified') {
-      return { label: 'Inactive', color: 'default' };
-    }
-    if (user.kycStatus === 'pending') {
-      return { label: 'Pending', color: 'warning' };
-    }
-    if (user.kycStatus === 'verified') {
-      return { label: 'Active', color: 'success' };
-    }
-    return { label: 'Inactive', color: 'default' };
-  };
 
   // Mock data for top traders - More realistic live trader data
   const topTraders = [
@@ -274,63 +257,38 @@ export default function CopyTrading() {
   }
   return (
     <Box sx={{ p: { xs: 1, sm: 3 }, minHeight: '100vh' }}>
-      {/* Header with site name, username and quick actions - Dashboard style */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, bgcolor: '#232742', p: { xs: 1.5, sm: 2, md: 2.5 }, borderRadius: 3, boxShadow: 3, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1.5, sm: 2, md: 0 }, minHeight: { xs: 'auto', sm: 80 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5, md: 2 }, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 36, sm: 42, md: 48 }, height: { xs: 36, sm: 42, md: 48 }, flexShrink: 0 }}>
-            <Person sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.8rem' } }} />
+      {/* Header with site name, username and quick actions - matching Dashboard */}
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        mb: 3, 
+        bgcolor: '#232742', 
+        p: 2, 
+        borderRadius: 3, 
+        boxShadow: 3,
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: { xs: 2, md: 0 }
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+            <Person fontSize="large" />
           </Avatar>
-          <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-            <Typography variant="h5" fontWeight={900} color={theme.palette.primary.main} sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, lineHeight: 1.2 }}>Copy Trading</Typography>
-            <Typography variant="h6" fontWeight={700} color="#fff" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1.25rem' }, lineHeight: 1.2, mt: 0.25 }}>Username: <span style={{ color: theme.palette.primary.main }}>{user?.username || user?.name || 'User'}</span></Typography>
+          <Box>
+            <Typography variant="h5" fontWeight={900} color={theme.palette.primary.main}>
+              Elon Investment Broker
+            </Typography>
+            <Typography variant="h6" fontWeight={700} color="#fff">
+              Username: <span style={{ color: theme.palette.primary.main }}>{user?.username || 'N/A'}</span>
+            </Typography>
           </Box>
         </Box>
-        <Stack direction={{ xs: 'row', sm: 'row' }} spacing={{ xs: 1, sm: 1.5, md: 2 }} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' }, flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 } }}>
-          <Chip
-            icon={<VerifiedUser />}
-            label={getAccountStatus().label}
-            color={getAccountStatus().color}
-            variant="outlined"
-            size="small"
-            sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Email />}
-            size="small"
-            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}
-            onClick={handleMailUsClick}
-          >
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+          <Chip icon={<VerifiedUser />} label="KYC" color="primary" variant="outlined" />
+          <Button variant="contained" color="primary" startIcon={<Email />} size="small">
             Mail Us
           </Button>
-          <Dialog open={mailDialogOpen} onClose={handleMailDialogClose} maxWidth="sm" fullWidth>
-            <DialogTitle>Contact Elon Investment</DialogTitle>
-            <DialogContent>
-              <Typography variant="body1" gutterBottom>
-                Welcome to Elon Investment Broker. For professional inquiries, support, or updates, please contact our admin team. We are committed to providing timely updates and support for all our users. Any information sent here will be received by our admin and used to keep you informed about your account and platform updates.
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email: support@elonbroker.com<br />
-                Phone: +234-800-000-0000<br />
-                Address: 123 Victoria Island, Lagos, Nigeria
-              </Typography>
-              <Alert severity="info" sx={{ mt: 2 }}>
-                You can expect prompt responses and regular updates from our admin team.
-              </Alert>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleMailDialogClose} color="primary" variant="contained">Close</Button>
-            </DialogActions>
-          </Dialog>
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<Settings />}
-            size="small"
-            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}
-            onClick={() => navigate('/dashboard/account-settings')}
-          >
+          <Button variant="contained" color="secondary" startIcon={<Settings />} size="small">
             Settings
           </Button>
         </Stack>
