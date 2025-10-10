@@ -1,7 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, Button, Alert } from '@mui/material';
-import { Typography, Box, Grid, Card, useTheme, Avatar, Button, Stack, Chip } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Alert, Typography, Button, Box, Grid, Card, useTheme, Avatar, Stack, Chip } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import SettingsIcon from '@mui/icons-material/Settings';
