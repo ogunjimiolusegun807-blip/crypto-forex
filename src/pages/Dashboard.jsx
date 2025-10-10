@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Alert, Typography, Button, Box, Grid, Card, useTheme, Avatar, Stack, Chip } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -14,6 +15,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useUser } from '../contexts/UserContext';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
@@ -118,7 +120,16 @@ export default function Dashboard() {
           <Button onClick={handleMailDialogClose} color="primary" variant="contained">Close</Button>
         </DialogActions>
       </Dialog>
-          <Button variant="contained" color="secondary" startIcon={<SettingsIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />} size="small" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}>Settings</Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<SettingsIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />}
+            size="small"
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}
+            onClick={() => navigate('/accountsettings')}
+          >
+            Settings
+          </Button>
         </Stack>
       </Box>
       {/* Ticker Bar */}
