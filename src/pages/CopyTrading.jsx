@@ -62,6 +62,7 @@ export default function CopyTrading() {
   const [selectedTrader, setSelectedTrader] = useState(null);
   const [copyAmount, setCopyAmount] = useState('');
   const [riskLevel, setRiskLevel] = useState('medium');
+  const [mailDialogOpen, setMailDialogOpen] = useState(false);
 
   // Mock data for top traders - More realistic live trader data
   const topTraders = [
@@ -256,42 +257,60 @@ export default function CopyTrading() {
   }
   return (
     <Box sx={{ p: { xs: 1, sm: 3 }, minHeight: '100vh' }}>
-      {/* Header with site name, username and quick actions - matching Dashboard */}
+      {/* Consistent Header with dynamic KYC/account status and local Mail Us dialog */}
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
         mb: 3, 
         bgcolor: '#232742', 
-        p: 2, 
+        p: { xs: 1.5, sm: 2, md: 2.5 }, 
         borderRadius: 3, 
         boxShadow: 3,
-        flexDirection: { xs: 'column', md: 'row' },
-        gap: { xs: 2, md: 0 }
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 1.5, sm: 2, md: 0 },
+        minHeight: { xs: 'auto', sm: 80 }
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-            <Person fontSize="large" />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5, md: 2 }, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+          <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 36, sm: 42, md: 48 }, height: { xs: 36, sm: 42, md: 48 }, flexShrink: 0 }}>
+            <Person sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.8rem' } }} />
           </Avatar>
-          <Box>
-            <Typography variant="h5" fontWeight={900} color={theme.palette.primary.main}>
-              Elon Investment Broker
+          <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+            <Typography variant="h5" fontWeight={900} color={theme.palette.primary.main} sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' }, lineHeight: 1.2 }}>
+              Copy Trading
             </Typography>
-            <Typography variant="h6" fontWeight={700} color="#fff">
-              Username: <span style={{ color: theme.palette.primary.main }}>{user?.username || 'N/A'}</span>
+            <Typography variant="h6" fontWeight={700} color="#fff" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1.25rem' }, lineHeight: 1.2, mt: 0.25 }}>
+              {user?.username ? `Welcome, ${user.username}` : 'Copy successful traders'}
             </Typography>
           </Box>
         </Box>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-          <Chip icon={<VerifiedUser />} label="KYC" color="primary" variant="outlined" />
-          <Button variant="contained" color="primary" startIcon={<Email />} size="small">
+        <Stack direction={{ xs: 'row', sm: 'row' }} spacing={{ xs: 1, sm: 1.5, md: 2 }} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' }, flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 } }}>
+          {/* Dynamic KYC/account status chip */}
+          <Chip icon={<VerifiedUser />} label={user?.kycStatus || 'KYC'} color={user?.kycStatus === 'Verified' ? 'success' : 'warning'} variant="outlined" />
+          <Button variant="contained" color="primary" startIcon={<Email />} size="small" onClick={() => setMailDialogOpen(true)} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}>
             Mail Us
           </Button>
-          <Button variant="contained" color="secondary" startIcon={<Settings />} size="small">
+          <Button variant="contained" color="secondary" startIcon={<Settings />} size="small" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }} onClick={() => window.location.href = '/account-settings'}>
             Settings
           </Button>
         </Stack>
       </Box>
+      {/* Mail Us Dialog */}
+      <Dialog open={mailDialogOpen} onClose={() => setMailDialogOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { bgcolor: '#232742', color: 'white' } }}>
+        <DialogTitle sx={{ color: 'primary.main', fontWeight: 'bold', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          Contact Support
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          <Typography variant="body1" gutterBottom>
+            For any assistance, please email us at <b>support@eloninvestment.com</b> or use the contact form on the website.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: '1px solid rgba(255,255,255,0.1)', p: 3 }}>
+          <Button onClick={() => setMailDialogOpen(false)} variant="outlined" color="inherit">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Typography variant="h4" gutterBottom fontWeight="bold" color="primary">
         Copy Trading
