@@ -380,7 +380,7 @@ export default function ReferUser() {
                       textShadow: '0 0 10px rgba(77, 208, 225, 0.5)'
                     }}
                   >
-                    {mockReferralData.referralId}
+                    {referralId}
                     {referralId}
                   </Typography>
                 </Box>
@@ -410,7 +410,7 @@ export default function ReferUser() {
                   <CardContent sx={{ textAlign: 'center', p: 2 }}>
                     <Group sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="primary.main">
-                      {mockReferralData.totalReferrals}
+                      {totalReferrals}
                       {totalReferrals}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -424,7 +424,7 @@ export default function ReferUser() {
                   <CardContent sx={{ textAlign: 'center', p: 2 }}>
                     <CheckCircle sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="success.main">
-                      {mockReferralData.activeReferrals}
+                      {activeReferrals}
                       {activeReferrals}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -438,7 +438,7 @@ export default function ReferUser() {
                   <CardContent sx={{ textAlign: 'center', p: 2 }}>
                     <AttachMoney sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="warning.main">
-                      ${mockReferralData.totalCommissions.toLocaleString()}
+                      ${totalCommissions.toLocaleString()}
                       ${totalCommissions.toLocaleString()}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -452,7 +452,7 @@ export default function ReferUser() {
                   <CardContent sx={{ textAlign: 'center', p: 2 }}>
                     <Schedule sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
                     <Typography variant="h4" fontWeight="bold" color="info.main">
-                      ${mockReferralData.pendingCommissions.toLocaleString()}
+                      ${pendingCommissions.toLocaleString()}
                       ${pendingCommissions.toLocaleString()}
                     </Typography>
                     <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -505,7 +505,7 @@ export default function ReferUser() {
                     </Typography>
                     <LinearProgress 
                       variant="determinate" 
-                      value={mockReferralData.nextTierProgress} 
+                      value={nextTierProgress} 
                       sx={{
                         height: 8,
                         borderRadius: 4,
@@ -516,7 +516,7 @@ export default function ReferUser() {
                       }}
                     />
                     <Typography variant="caption" color="rgba(255,255,255,0.6)" sx={{ mt: 1, display: 'block' }}>
-                      {mockReferralData.nextTierProgress}% Complete
+                      {nextTierProgress}% Complete
                     </Typography>
                   </Box>
                 )}
