@@ -13,18 +13,31 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useUser } from '../contexts/UserContext';
 
 export default function Dashboard() {
+  // Helper for KYC/account status mapping
+  const getAccountStatus = () => {
+    if (!user?.kycStatus || user.kycStatus === 'unverified') {
+      return { label: 'Inactive', color: 'default' };
+    }
+    if (user.kycStatus === 'pending') {
+      return { label: 'Pending', color: 'warning' };
+    }
+    if (user.kycStatus === 'verified') {
+      return { label: 'Active', color: 'success' };
+    }
+    return { label: 'Inactive', color: 'default' };
+  };
   const theme = useTheme();
   const { user, loading } = useUser();
-  // Default values for new users
+  // Use real user data if available
   const userStats = {
-    totalBalance: 0,
-    profit: 0,
-    totalBonus: 0,
+    totalBalance: user?.totalBalance || 0,
+    profit: user?.profit || 0,
+    totalBonus: user?.totalBonus || 0,
     accountStatus: user?.accountStatus || 'active',
-    totalTrades: 0,
-    openTrades: 0,
-    closedTrades: 0,
-    winLossRatio: 0
+    totalTrades: user?.totalTrades || 0,
+    openTrades: user?.openTrades || 0,
+    closedTrades: user?.closedTrades || 0,
+    winLossRatio: user?.winLossRatio || 0
   };
   const tickerData = [
     { label: 'BTC/USDT', value: '$38,500', change: '+1.2%', color: '#4caf50' },
@@ -63,7 +76,14 @@ export default function Dashboard() {
           </Box>
         </Box>
         <Stack direction={{ xs: 'row', sm: 'row' }} spacing={{ xs: 1, sm: 1.5, md: 2 }} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' }, flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 } }}>
-          <Chip icon={<VerifiedUserIcon />} label={user?.kycStatus === 'verified' ? 'KYC Verified' : 'KYC Pending'} color={user?.kycStatus === 'verified' ? 'success' : 'warning'} variant="outlined" size="small" sx={{ height: { xs: 28, sm: 32 }, fontSize: { xs: '0.7rem', sm: '0.8125rem' }, fontWeight: 600, '& .MuiChip-icon': { fontSize: { xs: '0.9rem', sm: '1rem' } } }} />
+          <Chip
+            icon={<VerifiedUserIcon />}
+            label={getAccountStatus().label}
+            color={getAccountStatus().color}
+            variant="outlined"
+            size="small"
+            sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }}
+          />
           <Button variant="contained" color="primary" startIcon={<EmailIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />} size="small" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}>Mail Us</Button>
           <Button variant="contained" color="secondary" startIcon={<SettingsIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} />} size="small" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, height: { xs: 32, sm: 36 }, px: { xs: 1.5, sm: 2, md: 3 }, fontWeight: 600, minWidth: { xs: 'auto', sm: 80 }, whiteSpace: 'nowrap' }}>Settings</Button>
         </Stack>
