@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 import {
   Typography,
   Box,
@@ -167,26 +168,31 @@ export default function VerifyAccount() {
   const confirmSubmit = () => {
     setLoading(true);
     const token = localStorage.getItem('authToken');
-    const kycData = {
-      ...formData,
-      identityDocument: uploadedFiles.identityDocument,
-      addressDocument: uploadedFiles.addressDocument,
-      selfiePhoto: uploadedFiles.selfiePhoto
-    };
-    // Remove file objects for now, only send text fields (backend should be updated for file uploads)
-    const kycPayload = { ...formData };
-    userAPI.submitKYC(kycPayload, token)
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      formDataToSend.append(key, value);
+    });
+    if (uploadedFiles.identityDocument) {
+      formDataToSend.append('identityDocument', uploadedFiles.identityDocument);
+    }
+    if (uploadedFiles.addressDocument) {
+      formDataToSend.append('addressDocument', uploadedFiles.addressDocument);
+    }
+    if (uploadedFiles.selfiePhoto) {
+      formDataToSend.append('selfiePhoto', uploadedFiles.selfiePhoto);
+    }
+    userAPI.submitKYC(formDataToSend, token)
       .then(() => {
         setLoading(false);
         setSubmitDialog(false);
-        alert('KYC verification submitted successfully! We will review your documents and update your account status within 24-48 hours.');
-        // Optionally, trigger user context refresh here
-        window.location.reload(); // reload to update status in context/dashboard
+        // Show styled notification instead of alert
+        setNotification({ open: true, type: 'success', message: 'KYC verification submitted successfully! We will review your documents and update your account status within 24-48 hours.' });
+        setTimeout(() => window.location.reload(), 2000);
       })
       .catch((err) => {
         setLoading(false);
         setSubmitDialog(false);
-        alert('Failed to submit KYC: ' + (err.message || 'Unknown error'));
+        setNotification({ open: true, type: 'error', message: 'Failed to submit KYC: ' + (err.message || 'Unknown error') });
       });
   };
 
