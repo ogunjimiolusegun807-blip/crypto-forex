@@ -169,7 +169,7 @@ export default function BuyPlan() {
   const handleConfirmInvestment = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      await userAPI.buyPlan(selectedPlan.id, token);
+      await userAPI.buyPlan(selectedPlan.id, investAmount, token);
       setNotification({ open: true, type: 'success', message: `Successfully purchased ${selectedPlan.name}` });
       setInvestDialogOpen(false);
       setInvestAmount('');
