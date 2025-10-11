@@ -92,6 +92,8 @@ export default function VerifyAccount() {
   const { user, loading: userLoading, error: userError } = useUser();
   const navigate = useNavigate();
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  // Notification state
+  const [notification, setNotification] = useState({ open: false, type: '', message: '' });
   const handleSupportClick = () => setSupportDialogOpen(true);
   const handleSupportDialogClose = () => setSupportDialogOpen(false);
   // Helper for KYC/account status mapping
@@ -231,6 +233,14 @@ export default function VerifyAccount() {
   }
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+      {/* Notification Alert */}
+      {notification.open && (
+        <Box sx={{ position: 'fixed', top: 24, left: 0, right: 0, zIndex: 1500, display: 'flex', justifyContent: 'center' }}>
+          <Alert severity={notification.type} onClose={() => setNotification({ ...notification, open: false })} sx={{ minWidth: 320, maxWidth: 480, fontWeight: 600 }}>
+            {notification.message}
+          </Alert>
+        </Box>
+      )}
       <Container maxWidth="xl" sx={{ p: { xs: 1, sm: 3 } }}>
         {/* Header matching the style from other pages */}
         <Box sx={{ 
