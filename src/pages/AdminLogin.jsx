@@ -15,15 +15,17 @@ export default function AdminLogin() {
     setLoading(true);
     setError('');
     try {
-  const res = await adminAPI.login({ email, password });
+      const res = await adminAPI.login({ email, password });
       if (res.success) {
         localStorage.setItem('adminToken', res.token);
         navigate('/admin/dashboard');
       } else {
         setError(res.message || 'Invalid credentials');
+        console.error('Admin login error:', res);
       }
     } catch (err) {
       setError('Login failed. Please try again.');
+      console.error('Admin login exception:', err);
     }
     setLoading(false);
   };
