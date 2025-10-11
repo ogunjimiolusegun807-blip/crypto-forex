@@ -1,3 +1,17 @@
+export const adminAPI = {
+  adminGetAllPlans: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/plans`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  adminGetAllSignals: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/signals`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  }
+};
 
 // Auto-detect backend: use VITE_API_BASE if set, else window.location.origin (for same-origin deploys)
 const BASE_URL = import.meta.env.VITE_API_BASE || 'https://crypto-forex-backend.onrender.com';
@@ -37,6 +51,17 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+    adminChangePassword: async ({ email, oldPassword, newPassword }, token) => {
+      const res = await fetch(`${BASE_URL}/api/auth/admin/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ email, oldPassword, newPassword })
+      });
+      return await handleResponse(res);
+    },
   getProfile: async (token) => {
     const res = await fetch(`${BASE_URL}/api/user/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -93,14 +118,40 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
-  buyPlan: async (planId, token) => {
+
+  // ADMIN ENDPOINTS
+  adminGetAllKYC: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/kyc`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  adminGetAllDeposits: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/deposits`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  adminGetAllWithdrawals: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/withdrawals`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  adminGetAllUsers: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/users`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  buyPlan: async (planId, amount, token) => {
     const res = await fetch(`${BASE_URL}/api/user/plan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ planId })
+      body: JSON.stringify({ planId, amount })
     });
     return await handleResponse(res);
   },

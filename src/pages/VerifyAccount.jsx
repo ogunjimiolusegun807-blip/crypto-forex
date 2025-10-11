@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { userAPI } from '../services/api';
 import {
   Typography,
   Box,
@@ -91,6 +92,8 @@ export default function VerifyAccount() {
   const { user, loading: userLoading, error: userError } = useUser();
   const navigate = useNavigate();
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  // Notification state
+  const [notification, setNotification] = useState({ open: false, type: '', message: '' });
   const handleSupportClick = () => setSupportDialogOpen(true);
   const handleSupportDialogClose = () => setSupportDialogOpen(false);
   // Helper for KYC/account status mapping
@@ -167,26 +170,31 @@ export default function VerifyAccount() {
   const confirmSubmit = () => {
     setLoading(true);
     const token = localStorage.getItem('authToken');
-    const kycData = {
-      ...formData,
-      identityDocument: uploadedFiles.identityDocument,
-      addressDocument: uploadedFiles.addressDocument,
-      selfiePhoto: uploadedFiles.selfiePhoto
-    };
-    // Remove file objects for now, only send text fields (backend should be updated for file uploads)
-    const kycPayload = { ...formData };
-    userAPI.submitKYC(kycPayload, token)
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      formDataToSend.append(key, value);
+    });
+    if (uploadedFiles.identityDocument) {
+      formDataToSend.append('identityDocument', uploadedFiles.identityDocument);
+    }
+    if (uploadedFiles.addressDocument) {
+      formDataToSend.append('addressDocument', uploadedFiles.addressDocument);
+    }
+    if (uploadedFiles.selfiePhoto) {
+      formDataToSend.append('selfiePhoto', uploadedFiles.selfiePhoto);
+    }
+    userAPI.submitKYC(formDataToSend, token)
       .then(() => {
         setLoading(false);
         setSubmitDialog(false);
-        alert('KYC verification submitted successfully! We will review your documents and update your account status within 24-48 hours.');
-        // Optionally, trigger user context refresh here
-        window.location.reload(); // reload to update status in context/dashboard
+        // Show styled notification instead of alert
+        setNotification({ open: true, type: 'success', message: 'KYC verification submitted successfully! We will review your documents and update your account status within 24-48 hours.' });
+        setTimeout(() => window.location.reload(), 2000);
       })
       .catch((err) => {
         setLoading(false);
         setSubmitDialog(false);
-        alert('Failed to submit KYC: ' + (err.message || 'Unknown error'));
+        setNotification({ open: true, type: 'error', message: 'Failed to submit KYC: ' + (err.message || 'Unknown error') });
       });
   };
 
@@ -225,6 +233,14 @@ export default function VerifyAccount() {
   }
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+      {/* Notification Alert */}
+      {notification.open && (
+        <Box sx={{ position: 'fixed', top: 24, left: 0, right: 0, zIndex: 1500, display: 'flex', justifyContent: 'center' }}>
+          <Alert severity={notification.type} onClose={() => setNotification({ ...notification, open: false })} sx={{ minWidth: 320, maxWidth: 480, fontWeight: 600 }}>
+            {notification.message}
+          </Alert>
+        </Box>
+      )}
       <Container maxWidth="xl" sx={{ p: { xs: 1, sm: 3 } }}>
         {/* Header matching the style from other pages */}
         <Box sx={{ 

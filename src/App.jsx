@@ -51,6 +51,8 @@ import Chart from './pages/Chart';
 import Calendar from './pages/Calendar';
 import Header from './component/Header';
 import Footer from './component/Footer';
+import AdminLogin from './pages/AdminLogin';
+import AdminPanel from './pages/AdminPanel';
 
 const drawerWidth = 240;
 
@@ -157,8 +159,10 @@ function AppContent() {
     }
   };
 
-  // Check if current route is login or register
+  // Check if current route is login, register, admin-login, or admin dashboard
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isAdminLoginPage = location.pathname === '/admin-login';
+  const isAdminPanelPage = location.pathname.startsWith('/admin');
 
   if (isAuthPage) {
     // Render only the auth page, no AppBar/Drawer/Footer
@@ -168,6 +172,28 @@ function AppContent() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+        </Routes>
+      </Box>
+    );
+  }
+
+  if (isAdminLoginPage) {
+    // Render only the admin login page, no AppBar/Drawer/Footer
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Routes>
+          <Route path="/admin-login" element={<AdminLogin />} />
+        </Routes>
+      </Box>
+    );
+  }
+
+  if (isAdminPanelPage) {
+    // Render only the admin panel, no AppBar/Drawer/Footer
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Routes>
+          <Route path="/admin/dashboard" element={<AdminPanel />} />
         </Routes>
       </Box>
     );
