@@ -93,14 +93,14 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
-  buyPlan: async (planId, token) => {
+  buyPlan: async (planId, amount, token) => {
     const res = await fetch(`${BASE_URL}/api/user/plan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ planId })
+      body: JSON.stringify({ planId, amount })
     });
     return await handleResponse(res);
   },
