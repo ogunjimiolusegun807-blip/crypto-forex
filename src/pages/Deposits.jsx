@@ -139,10 +139,15 @@ export default function Deposits() {
   }
   return (
     <Container maxWidth="xl">
-      {/* Deposit Success Notification */}
+      {/* Deposit Success/Error Notification at top of page */}
       {depositSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setDepositSuccess(null)}>
+        <Alert severity="success" sx={{ mb: 2, position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, minWidth: 300 }} onClose={() => setDepositSuccess(null)}>
           {depositSuccess}
+        </Alert>
+      )}
+      {depositError && (
+        <Alert severity="error" sx={{ mb: 2, position: 'fixed', top: 120, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, minWidth: 300 }} onClose={() => setDepositError(null)}>
+          {depositError}
         </Alert>
       )}
       <Box sx={{
