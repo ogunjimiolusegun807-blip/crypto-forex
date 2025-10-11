@@ -149,11 +149,11 @@ export default function Dashboard() {
           <Typography variant="body1" gutterBottom>
             Welcome to Elon Investment Broker. For professional inquiries, support, or updates, please contact our admin team. We are committed to providing timely updates and support for all our users. Any information sent here will be received by our admin and used to keep you informed about your account and platform updates.
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Email: support@elonbroker.com<br />
-            Phone: +234-800-000-0000<br />
-            Address: 123 Victoria Island, Lagos, Nigeria
-          </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Email: Eloninprivateinvestment@outlook.com<br />
+              Phone: +14233986204<br />
+              Address: Houston, Texas
+            </Typography>
           <Alert severity="info" sx={{ mt: 2 }}>
             You can expect prompt responses and regular updates from our admin team.
           </Alert>

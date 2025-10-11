@@ -81,7 +81,7 @@ export default function AdminPanel() {
   };
 
   // Settings state
-  const [adminCreds, setAdminCreds] = useState({ email: 'admin@elonbroker.com', password: '' });
+  const [adminCreds, setAdminCreds] = useState({ email: 'Eloninprivateinvestment@outlook.com', password: '' });
   // Plans tab
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(false);
