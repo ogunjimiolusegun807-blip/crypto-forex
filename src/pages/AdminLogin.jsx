@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../services/api';
 
 export default function AdminLogin() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,7 +15,7 @@ export default function AdminLogin() {
     setLoading(true);
     setError('');
     try {
-      const res = await adminAPI.login({ username, password });
+  const res = await adminAPI.login({ email, password });
       if (res.success) {
         localStorage.setItem('adminToken', res.token);
         navigate('/admin/dashboard');
@@ -38,9 +38,9 @@ export default function AdminLogin() {
           <form onSubmit={handleLogin}>
             <TextField
               fullWidth
-              label="Username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              label="Email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               sx={{ mb: 2, bgcolor: '#232742', input: { color: '#fff' }, label: { color: 'rgba(255,255,255,0.7)' } }}
               InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.7)' } }}
             />
