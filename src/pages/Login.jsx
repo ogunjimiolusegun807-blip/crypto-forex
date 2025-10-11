@@ -23,7 +23,10 @@ export default function Login() {
       setLoading(true);
       try {
         await login({ email, password });
-        // Success handled by useEffect
+        setSuccess('Login successful! Redirecting...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1200);
       } catch (err) {
         setError(err?.message || 'Login failed');
       } finally {
