@@ -16,11 +16,11 @@ export default function AdminLogin() {
     setError('');
     try {
       const res = await adminAPI.adminLogin({ email, password });
-      if (res.success) {
+      if (res.token) {
         localStorage.setItem('adminToken', res.token);
         navigate('/admin/dashboard');
       } else {
-        setError(res.message || 'Invalid credentials');
+        setError(res.error || res.message || 'Invalid credentials');
         console.error('Admin login error:', res);
       }
     } catch (err) {
