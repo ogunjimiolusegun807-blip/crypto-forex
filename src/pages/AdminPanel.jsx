@@ -11,6 +11,7 @@ import PersonOffIcon from '@mui/icons-material/PersonOff';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PaymentIcon from '@mui/icons-material/Payment';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate } from 'react-router-dom';
 import { userAPI } from '../services/api';
@@ -235,6 +236,14 @@ export default function AdminPanel() {
         .then(setSignals)
         .catch(() => setActionNotification({ open: true, type: 'error', message: 'Failed to fetch signals.' }))
         .finally(() => setSignalsLoading(false));
+    }
+    // When admin opens KYC tab, refresh KYC list
+    else if (tab === 7) {
+      setKycLoading(true);
+      userAPI.adminGetAllKYC(token)
+        .then((kycData) => setKycRequests((kycData || []).filter(k => !isCompletedKycStatus(k))))
+        .catch(() => setActionNotification({ open: true, type: 'error', message: 'Failed to fetch KYC requests.' }))
+        .finally(() => setKycLoading(false));
     }
     // fetch users for manual credit when admin opens deposits tab
     if (tab === 1) {
@@ -1130,6 +1139,12 @@ export default function AdminPanel() {
               {!collapsed && <ListItemText primary="Users" />}
             </ListItemButton>
             </Tooltip>
+            <Tooltip title={collapsed ? 'KYC' : ''} placement="right">
+            <ListItemButton selected={tab === 7} onClick={() => setTab(7)}>
+              <ListItemIcon><HowToRegIcon color="primary" /></ListItemIcon>
+              {!collapsed && <ListItemText primary="KYC" />}
+            </ListItemButton>
+            </Tooltip>
             <Tooltip title={collapsed ? 'Settings' : ''} placement="right">
             <ListItemButton selected={tab === 6} onClick={() => setTab(6)}>
               <ListItemIcon><PersonOffIcon color="primary" /></ListItemIcon>
@@ -1166,6 +1181,10 @@ export default function AdminPanel() {
             <ListItemButton onClick={() => setTab(5)}>
               <ListItemIcon><PeopleIcon /></ListItemIcon>
               <ListItemText primary="Users" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setTab(7)}>
+              <ListItemIcon><HowToRegIcon /></ListItemIcon>
+              <ListItemText primary="KYC" />
             </ListItemButton>
             <ListItemButton onClick={() => setTab(6)}>
               <ListItemIcon><PersonOffIcon /></ListItemIcon>
@@ -1299,7 +1318,8 @@ export default function AdminPanel() {
         {tab === 3 && renderPlans()}
         {tab === 4 && renderSignals()}
         {tab === 5 && renderUsers()}
-        {tab === 6 && renderSettings()}
+  {tab === 6 && renderSettings()}
+  {tab === 7 && renderKYC()}
 
         {/* Image preview modal */}
         <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md" fullWidth>

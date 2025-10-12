@@ -88,7 +88,7 @@ export default function AccountSettings() {
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
   const theme = useTheme();
-  const { user, loading, error } = useUser();
+  const { user, loading, error, updateUser } = useUser();
   const [currentTab, setCurrentTab] = useState(0);
   const [showPassword, setShowPassword] = useState({
     old: false,
@@ -173,8 +173,68 @@ export default function AccountSettings() {
   const handleSaveSettings = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      await userAPI.updateSettings(accountSettings, token);
-      setNotification({ open: true, type: 'success', message: 'Settings updated successfully.' });
+      // Persist notification/settings first
+      const settingsRes = await userAPI.updateSettings(accountSettings, token);
+
+      // Build profile payload from current form state and attempt to save profile as well
+      const profilePayload = {
+        fullName: formData.fullName,
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+        country: formData.country,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        address: formData.address
+      };
+
+      let profileRes;
+      try {
+        profileRes = await userAPI.updateProfile(profilePayload, token);
+      } catch (profileErr) {
+        // If profile update fails, still surface the error below
+        throw profileErr;
+      }
+
+      // Normalize returned user object
+      const updatedUser = (profileRes && (profileRes.user || (profileRes.data && profileRes.data.user))) || profileRes;
+
+      // Persist updated user into localStorage and notify global context
+      try {
+        if (updatedUser && typeof updatedUser === 'object') {
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+      } catch (e) {
+        // ignore storage errors
+      }
+
+      // If UserContext exposes updateUser, prefer calling it so state stays synced
+      try {
+        if (typeof updateUser === 'function') {
+          // updateUser may accept the user object or re-fetch; try both
+          await updateUser(updatedUser);
+        } else {
+          window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedUser }));
+        }
+      } catch (e) {
+        // fallback: dispatch event
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedUser })); } catch (ee) {}
+      }
+
+      // Rehydrate local form to reflect saved values immediately
+      setFormData(f => ({
+        ...f,
+        fullName: updatedUser?.fullName || profilePayload.fullName || '',
+        username: updatedUser?.username || profilePayload.username || '',
+        email: updatedUser?.email || profilePayload.email || '',
+        phone: updatedUser?.phone || profilePayload.phone || '',
+        country: updatedUser?.country || profilePayload.country || '',
+        state: updatedUser?.state || profilePayload.state || '',
+        zipCode: updatedUser?.zipCode || profilePayload.zipCode || '',
+        address: updatedUser?.address || profilePayload.address || ''
+      }));
+
+      setNotification({ open: true, type: 'success', message: 'Settings and profile saved successfully.' });
     } catch (err) {
       setNotification({ open: true, type: 'error', message: err.message || 'Settings update failed.' });
     }
