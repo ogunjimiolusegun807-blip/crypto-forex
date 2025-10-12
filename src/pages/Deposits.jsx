@@ -196,14 +196,7 @@ export default function Deposits() {
           width: { xs: '100%', sm: 'auto' },
           justifyContent: { xs: 'center', sm: 'flex-start' }
         }}>
-          <Avatar sx={{ 
-            bgcolor: 'primary.main', 
-            width: { xs: 36, sm: 42, md: 48 }, 
-            height: { xs: 36, sm: 42, md: 48 },
-            flexShrink: 0
-          }}>
-            <PersonIcon sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.8rem' } }} />
-          </Avatar>
+          <img src="/LOGO.jpg" alt="Elon Investment Logo" style={{ height: 38, maxWidth: 48, objectFit: 'contain', borderRadius: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.10)', background: '#fff', marginRight: 12 }} />
           <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
             <Typography 
               variant="h5"

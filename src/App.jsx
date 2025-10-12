@@ -216,7 +216,7 @@ function AppContent() {
               <MenuIcon />
             </IconButton>
             <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-              <img src="/eloninvestmentlogo.jpg" alt="Elon Investment Logo" style={{ height: 38, maxWidth: 48, objectFit: 'contain', borderRadius: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.10)', background: '#fff', marginRight: 12 }} />
+              <img src="/LOGO.jpg" alt="Elon Investment Logo" style={{ height: 38, maxWidth: 48, objectFit: 'contain', borderRadius: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.10)', background: '#fff', marginRight: 12 }} />
               <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, letterSpacing: 1 }}>
                 Elon Investment Broker
               </Typography>
