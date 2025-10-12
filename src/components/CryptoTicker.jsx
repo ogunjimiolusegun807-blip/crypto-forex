@@ -102,6 +102,9 @@ export default function CryptoTicker({ symbols = [], interval = 8000 }) {
   }
 
   // marquee effect: duplicate items to create continuous scroll
+  // animation duration scales with number of items to keep speed reasonable
+  const duration = Math.max(12, Math.min(60, Math.floor((items.length || 4) * 6))); // 6s per 1 item roughly
+
   return (
     <Box
       ref={containerRef}
@@ -112,29 +115,34 @@ export default function CryptoTicker({ symbols = [], interval = 8000 }) {
         overflow: 'hidden',
         bgcolor: '#181A20',
         borderRadius: 2,
-        p: 1,
+        px: 1,
+        py: { xs: 0.5, sm: 0.75 },
+        height: { xs: 40, sm: 46, md: 54 },
+        display: 'flex',
+        alignItems: 'center'
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ width: '100%', overflow: 'hidden' }}>
         <Box
           sx={{
             display: 'flex',
-            gap: 3,
+            gap: { xs: 2, sm: 3 },
             alignItems: 'center',
             whiteSpace: 'nowrap',
-            animation: 'scroll-left 20s linear infinite',
+            // create a long horizontal strip and translate it left by 50% (we duplicate items)
+            animation: `scroll-left ${duration}s linear infinite`,
             '& > div': { display: 'inline-flex', alignItems: 'center', gap: 1 }
           }}
         >
           {items.concat(items).map((it, idx) => (
-            <Box key={`${it.key}_${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 700, minWidth: 90 }}>
+            <Box key={`${it.key}_${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 2, flexShrink: 0 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, minWidth: { xs: 70, sm: 90 }, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                 {it.label}
               </Typography>
-              <Typography variant="body1" sx={{ fontWeight: 800, color: '#fff', minWidth: 90 }}>
+              <Typography variant="body2" sx={{ fontWeight: 800, color: '#fff', minWidth: { xs: 60, sm: 80 }, fontSize: { xs: '0.7rem', sm: '0.85rem' } }}>
                 {it.price}
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: it.rawChange >= 0 ? theme.palette.success.main : theme.palette.error.main }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: (it.rawChange || 0) >= 0 ? theme.palette.success.main : theme.palette.error.main, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                 {it.change}
               </Typography>
             </Box>
