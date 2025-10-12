@@ -83,22 +83,20 @@ function Register() {
           <Grid item xs={12} md={7} sx={{ p: { xs: 3, md: 6 } }}>
             <CardContent>
               <form onSubmit={handleSubmit}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                <Grid container spacing={2} direction="column">
+                  <Grid item xs={12}>
                     <TextField fullWidth label="Full Name" value={form.fullName} onChange={handleChange('fullName')} />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField fullWidth label="Username" value={form.username} onChange={handleChange('username')} />
                   </Grid>
-
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField fullWidth label="Email" type="email" value={form.email} onChange={handleChange('email')} />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField fullWidth label="Phone" value={form.phone} onChange={handleChange('phone')} />
                   </Grid>
-
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <FormControl fullWidth>
                       <InputLabel>Gender</InputLabel>
                       <Select value={form.gender} label="Gender" onChange={handleChange('gender')}>
@@ -109,51 +107,47 @@ function Register() {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <FormControl fullWidth>
                       <InputLabel>Country</InputLabel>
                       <Select value={form.country} label="Country" onChange={handleChange('country')}>
+                        <MenuItem value="">Select Country</MenuItem>
                         {countries.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
                       </Select>
                     </FormControl>
                   </Grid>
-
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField fullWidth label="Password" type="password" value={form.password} onChange={handleChange('password')} />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField fullWidth label="Confirm Password" type="password" value={form.confirmPassword} onChange={handleChange('confirmPassword')} />
                   </Grid>
-
-                  <Grid item xs={8} sm={6}>
+                  <Grid item xs={12}>
                     <TextField fullWidth label="Enter Captcha" value={form.captcha} onChange={handleChange('captcha')} />
                   </Grid>
-                  <Grid item xs={4} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.05)', px: 2, py: 1, borderRadius: 1 }}>5F9C3E</Box>
+                  <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.05)', px: 2, py: 1, borderRadius: 1, ml: 1 }}>5F9C3E</Box>
                   </Grid>
-
                   <Grid item xs={12}>
                     <FormControl fullWidth>
                       <InputLabel>Account Type</InputLabel>
                       <Select value={form.accountType} label="Account Type" onChange={handleChange('accountType')}>
+                        <MenuItem value="">Select Account Type</MenuItem>
                         {accountTypes.map(a => <MenuItem key={a} value={a}>{a}</MenuItem>)}
                       </Select>
                     </FormControl>
                   </Grid>
-
                   <Grid item xs={12}>
                     <Button variant="contained" color="primary" fullWidth size="large" type="submit" disabled={loading} sx={{ borderRadius: 6 }}>
                       {loading ? 'Registering...' : 'Register'}
                     </Button>
                   </Grid>
-
                   {error && (
                     <Grid item xs={12}><Typography color="error" sx={{ mt: 1 }}>{error}</Typography></Grid>
                   )}
                   {success && (
                     <Grid item xs={12}><Typography color="primary" sx={{ mt: 1 }}>{success}</Typography></Grid>
                   )}
-
                   <Grid item xs={12}>
                     <Typography sx={{ mt: 2, textAlign: 'center' }}>Already have an account? <Link to="/login">Login</Link></Typography>
                   </Grid>
