@@ -165,6 +165,34 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  adminCreatePlan: async (plan, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/plans`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(plan)
+    });
+    return await handleResponse(res);
+  },
+  adminUpdatePlan: async (planId, plan, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/plans/${planId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(plan)
+    });
+    return await handleResponse(res);
+  },
+  adminDeletePlan: async (planId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/plans/${planId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  // Public plans list for buyers
+  getPublicPlans: async () => {
+    const res = await fetch(`${BASE_URL}/api/plans/public`);
+    return await handleResponse(res);
+  },
   adminGetAllSignals: async (token) => {
     const res = await fetch(`${BASE_URL}/api/admin/signals`, {
       headers: { 'Authorization': `Bearer ${token}` }

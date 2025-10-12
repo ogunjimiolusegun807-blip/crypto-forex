@@ -151,6 +151,9 @@ export default function AdminPanel() {
   // Plans tab
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(false);
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [planSaving, setPlanSaving] = useState(false);
   // Signals tab
   const [signals, setSignals] = useState([]);
   const [signalsLoading, setSignalsLoading] = useState(false);
@@ -214,8 +217,17 @@ export default function AdminPanel() {
                     Duration: {plan.duration}
                   </Typography>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <Button variant="contained" color="primary" size="small">Edit</Button>
-                    <Button variant="contained" color="error" size="small">Delete</Button>
+                    <Button variant="contained" color="primary" size="small" onClick={() => { setEditingPlan(plan); setPlanDialogOpen(true); }}>Edit</Button>
+                    <Button variant="contained" color="error" size="small" onClick={async () => {
+                      const token = localStorage.getItem('adminToken');
+                      try {
+                        await userAPI.adminDeletePlan(plan.id, token);
+                        setPlans(prev => prev.filter(p => p.id !== plan.id));
+                        setActionNotification({ open: true, type: 'success', message: 'Plan deleted.' });
+                      } catch (e) {
+                        setActionNotification({ open: true, type: 'error', message: e.message || 'Delete failed.' });
+                      }
+                    }}>Delete</Button>
                   </Stack>
                 </CardContent>
               </Card>
@@ -224,8 +236,49 @@ export default function AdminPanel() {
         </Grid>
       )}
       <Box sx={{ mt: 4 }}>
-        <Button variant="contained" color="success">Add New Plan</Button>
+        <Button variant="contained" color="success" onClick={() => { setEditingPlan({ name: '', type: 'regular', roi: '', minAmount: 0, maxAmount: 0, duration: '', color: '#ffffff', gradient: '', features: [] }); setPlanDialogOpen(true); }}>Add New Plan</Button>
       </Box>
+      {/* Plan edit/create dialog */}
+      <Dialog open={planDialogOpen} onClose={() => { setPlanDialogOpen(false); setEditingPlan(null); }} maxWidth="sm" fullWidth>
+        <DialogContent>
+          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>{editingPlan && editingPlan.id ? 'Edit Plan' : 'Create Plan'}</Typography>
+          <TextField fullWidth label="Name" sx={{ mb: 2 }} value={editingPlan?.name || ''} onChange={e => setEditingPlan(p => ({ ...p, name: e.target.value }))} />
+          <TextField fullWidth label="Type" sx={{ mb: 2 }} value={editingPlan?.type || ''} onChange={e => setEditingPlan(p => ({ ...p, type: e.target.value }))} />
+          <TextField fullWidth label="ROI (number)" sx={{ mb: 2 }} value={editingPlan?.roi || ''} onChange={e => setEditingPlan(p => ({ ...p, roi: e.target.value }))} />
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={6}><TextField fullWidth label="Min Amount" value={editingPlan?.minAmount || 0} onChange={e => setEditingPlan(p => ({ ...p, minAmount: Number(e.target.value) }))} /></Grid>
+            <Grid item xs={6}><TextField fullWidth label="Max Amount" value={editingPlan?.maxAmount || 0} onChange={e => setEditingPlan(p => ({ ...p, maxAmount: Number(e.target.value) }))} /></Grid>
+          </Grid>
+          <TextField fullWidth label="Duration" sx={{ mb: 2 }} value={editingPlan?.duration || ''} onChange={e => setEditingPlan(p => ({ ...p, duration: e.target.value }))} />
+          <TextField fullWidth label="Features (one per line)" multiline rows={4} value={(editingPlan?.features || []).join('\n')} onChange={e => setEditingPlan(p => ({ ...p, features: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) }))} sx={{ mb: 2 }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setPlanDialogOpen(false); setEditingPlan(null); }} color="inherit">Cancel</Button>
+          <Button variant="contained" color="primary" onClick={async () => {
+            if (!editingPlan) return;
+            setPlanSaving(true);
+            const token = localStorage.getItem('adminToken');
+            try {
+              if (editingPlan.id) {
+                const updated = await userAPI.adminUpdatePlan(editingPlan.id, editingPlan, token);
+                setPlans(prev => prev.map(p => p.id === updated.id ? updated : p));
+                setActionNotification({ open: true, type: 'success', message: 'Plan updated.' });
+              } else {
+                const created = await userAPI.adminCreatePlan(editingPlan, token);
+                setPlans(prev => [created, ...prev]);
+                setActionNotification({ open: true, type: 'success', message: 'Plan created.' });
+              }
+              setPlanDialogOpen(false);
+              setEditingPlan(null);
+            } catch (e) {
+              setActionNotification({ open: true, type: 'error', message: e.message || 'Save failed.' });
+            }
+            setPlanSaving(false);
+          }} disabled={planSaving}>
+            {planSaving ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 

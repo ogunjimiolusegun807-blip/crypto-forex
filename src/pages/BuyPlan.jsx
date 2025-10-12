@@ -47,7 +47,8 @@ import {
   Copyright
 } from '@mui/icons-material';
 
-const investmentPlans = [
+// default fallback plans used when backend isn't reachable
+const defaultInvestmentPlans = [
   {
     id: 1,
     name: 'Bronze Plan',
@@ -137,8 +138,18 @@ export default function BuyPlan() {
     const fetchPlans = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const res = await userAPI.getPlans(token);
-        setPlansHistory(res.plans || []);
+        // Prefer public canonical plans when available
+        let plansRes;
+        try {
+          const pub = await userAPI.getPublicPlans();
+          plansRes = pub.plans || [];
+        } catch (e) {
+          // fall back to user's own plan history endpoint
+          const res = await userAPI.getPlans(token);
+          plansRes = res.plans || [];
+        }
+        // If no canonical plans available, render defaultInvestmentPlans for buying UI
+        setPlansHistory(plansRes.length ? plansRes : defaultInvestmentPlans);
       } catch (err) {
         // Optionally handle error
       }
@@ -337,7 +348,7 @@ export default function BuyPlan() {
 
         {/* Investment Plans */}
         <Grid container spacing={3} sx={{ mb: 8, justifyContent: 'center' }}>
-          {investmentPlans.map((plan) => (
+          {(plansHistory.length ? plansHistory : defaultInvestmentPlans).map((plan) => (
             <Grid item xs={12} sm={6} lg={4} key={plan.id}>
               <Card sx={{ 
                 height: '100%',
