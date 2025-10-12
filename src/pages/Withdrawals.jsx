@@ -25,8 +25,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import EmailIcon from '@mui/icons-material/Email';
 import SettingsIcon from '@mui/icons-material/Settings';
+// import CryptoTicker from '../components/CryptoTicker';
 import { useTheme } from '@mui/material/styles';
-import CryptoTicker from '../components/CryptoTicker';
 
 const tickerData = [
   { label: 'Nasdaq 100', value: '24,344.8', change: '+98.90 (+0.41%)', color: 'success.main' },
@@ -210,16 +210,74 @@ export default function Withdrawals() {
         </Stack>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <CryptoTicker
-          interval={8000}
-          symbols={[
-            { id: 'bitcoin', label: 'BTC/USD', pair: 'usd' },
-            { id: 'ethereum', label: 'ETH/USD', pair: 'usd' },
-            { id: 'litecoin', label: 'LTC/USD', pair: 'usd' },
-            { source: 'fiat', base: 'USD', symbol: 'EUR', label: 'EUR/USD' }
-          ]}
-        />
+      {/* Ticker Bar - same as Dashboard */}
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: { xs: 1.5, sm: 2, md: 3 }, 
+        bgcolor: '#181A20', 
+        p: { xs: 1, sm: 1.5 }, 
+        borderRadius: 2, 
+        mb: 3, 
+        overflowX: 'auto', 
+        boxShadow: 1,
+        '&::-webkit-scrollbar': { 
+          height: { xs: 4, sm: 6 }
+        },
+        '&::-webkit-scrollbar-track': { 
+          bgcolor: 'rgba(255,255,255,0.05)',
+          borderRadius: 2
+        },
+        '&::-webkit-scrollbar-thumb': { 
+          bgcolor: 'primary.main', 
+          borderRadius: 2,
+          '&:hover': {
+            bgcolor: 'primary.dark'
+          }
+        },
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'primary.main rgba(255,255,255,0.1)'
+      }}>
+        {tickerData.map((item, idx) => (
+          <Box 
+            key={idx} 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: { xs: 0.5, sm: 1 },
+              minWidth: { xs: 140, sm: 160, md: 180 },
+              flexDirection: { xs: 'column', sm: 'row' },
+              textAlign: { xs: 'center', sm: 'left' },
+              py: { xs: 0.5, sm: 0 },
+              px: { xs: 1, sm: 0 }
+            }}
+          >
+            <Typography 
+              variant="subtitle2" 
+              color="text.secondary" 
+              fontWeight={600}
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8125rem' } }}
+            >
+              {item.label}
+            </Typography>
+            <Typography 
+              variant="body1" 
+              color="#fff" 
+              fontWeight={700}
+              sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' } }}
+            >
+              {item.value}
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color={item.color} 
+              fontWeight={700}
+              sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' } }}
+            >
+              {item.change}
+            </Typography>
+          </Box>
+        ))}
       </Box>
 
       {/* Withdraw Form - centered and professional */}
