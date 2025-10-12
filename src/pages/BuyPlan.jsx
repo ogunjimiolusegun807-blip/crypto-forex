@@ -130,31 +130,35 @@ export default function BuyPlan() {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
   const [plansHistory, setPlansHistory] = useState([]);
+  const [publicPlans, setPublicPlans] = useState([]);
   const [notification, setNotification] = useState({ open: false, type: '', message: '' });
   const [confirming, setConfirming] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  // Fetch user's plan history from backend
+  // Fetch canonical public plans (for display) and user's purchased plans (history)
   useEffect(() => {
-    const fetchPlans = async () => {
+    const fetch = async () => {
+      const token = localStorage.getItem('authToken');
       try {
-        const token = localStorage.getItem('authToken');
-        // Prefer public canonical plans when available
-        let plansRes;
+        // public plans for display
         try {
           const pub = await userAPI.getPublicPlans();
-          plansRes = pub.plans || [];
+          setPublicPlans(pub.plans || []);
         } catch (e) {
-          // fall back to user's own plan history endpoint
-          const res = await userAPI.getPlans(token);
-          plansRes = res.plans || [];
+          // if public plans fail, leave publicPlans empty so we fall back to defaults
+          setPublicPlans([]);
         }
-        // If no canonical plans available, render defaultInvestmentPlans for buying UI
-        setPlansHistory(plansRes.length ? plansRes : defaultInvestmentPlans);
+        // user's purchased plans / history
+        try {
+          const res = await userAPI.getPlans(token);
+          setPlansHistory(res.plans || []);
+        } catch (e) {
+          setPlansHistory([]);
+        }
       } catch (err) {
-        // Optionally handle error
+        // ignore
       }
     };
-    fetchPlans();
+    fetch();
   }, [user]);
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
@@ -233,7 +237,10 @@ export default function BuyPlan() {
             plansHistory.map((plan, idx) => (
               <ListItem key={idx}>
                 <ListItemIcon><Star /></ListItemIcon>
-                <ListItemText primary={`Plan ID: ${plan.planId}`} secondary={`Date: ${new Date(plan.date).toLocaleString()}`} />
+                <ListItemText
+                  primary={plan.planId ? `Plan ID: ${plan.planId}` : (plan.name || `Plan ${idx + 1}`)}
+                  secondary={`Date: ${new Date(plan.date || plan.createdAt || Date.now()).toLocaleString()}`}
+                />
               </ListItem>
             ))
           )}
@@ -348,7 +355,7 @@ export default function BuyPlan() {
 
         {/* Investment Plans */}
         <Grid container spacing={3} sx={{ mb: 8, justifyContent: 'center' }}>
-          {(plansHistory.length ? plansHistory : defaultInvestmentPlans).map((plan) => (
+          {(publicPlans.length ? publicPlans : defaultInvestmentPlans).map((plan) => (
             <Grid item xs={12} sm={6} lg={4} key={plan.id}>
               <Card sx={{ 
                 height: '100%',
@@ -424,7 +431,7 @@ export default function BuyPlan() {
                       mb: 1
                     }}>
                       <Typography variant="body2" fontWeight="600">Minimum:</Typography>
-                      <Typography variant="body2">${plan.minAmount.toLocaleString()}</Typography>
+                      <Typography variant="body2">${Number(plan.minAmount || 0).toLocaleString()}</Typography>
                     </Box>
                     <Box sx={{ 
                       display: 'flex',
@@ -432,7 +439,7 @@ export default function BuyPlan() {
                       mb: 1
                     }}>
                       <Typography variant="body2" fontWeight="600">Maximum:</Typography>
-                      <Typography variant="body2">${plan.maxAmount.toLocaleString()}</Typography>
+                      <Typography variant="body2">${Number(plan.maxAmount || 0).toLocaleString()}</Typography>
                     </Box>
                     <Box sx={{ 
                       display: 'flex',
@@ -448,7 +455,7 @@ export default function BuyPlan() {
                       Key Features:
                     </Typography>
                     <Box sx={{ mb: 2 }}>
-                      {plan.features.slice(0, 3).map((feature, index) => (
+                      {(Array.isArray(plan.features) ? plan.features : (plan.features ? String(plan.features).split('\n') : [])).slice(0, 3).map((feature, index) => (
                         <Typography key={index} variant="body2" sx={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -574,10 +581,10 @@ export default function BuyPlan() {
                   <Typography variant="h6" fontWeight="bold" gutterBottom>
                     Plan Details
                   </Typography>
-                  <Typography>ROI: {selectedPlan.roi}% Daily</Typography>
-                  <Typography>Duration: {selectedPlan.duration}</Typography>
+                  <Typography>ROI: {selectedPlan?.roi}% Daily</Typography>
+                  <Typography>Duration: {selectedPlan?.duration}</Typography>
                   <Typography>
-                    Range: ${selectedPlan.minAmount.toLocaleString()} - ${selectedPlan.maxAmount.toLocaleString()}
+                    Range: ${Number(selectedPlan?.minAmount || 0).toLocaleString()} - ${Number(selectedPlan?.maxAmount || 0).toLocaleString()}
                   </Typography>
                 </Paper>
 
