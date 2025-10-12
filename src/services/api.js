@@ -81,14 +81,14 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
-  withdrawal: async (amount, token) => {
+  withdrawal: async (payload, token) => {
     const res = await fetch(`${BASE_URL}/api/user/withdrawal`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ amount })
+      body: JSON.stringify(payload)
     });
     return await handleResponse(res);
   },

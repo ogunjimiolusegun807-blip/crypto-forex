@@ -478,12 +478,12 @@ export default function Withdrawals() {
               mt: 1
             }}
             disabled={!amount}
-            onClick={async () => {
+              onClick={async () => {
               setWithdrawalSuccess(null);
               setWithdrawalError(null);
               try {
                 const token = localStorage.getItem('authToken');
-                await userAPI.withdrawal(Number(amount), token);
+                await userAPI.withdrawal({ amount: Number(amount), withdrawalType, bankName, accountName, accountNumber, walletAddress }, token);
                 setWithdrawalSuccess('Withdrawal request submitted successfully!');
                 setTimeout(() => {
                   setWithdrawalSuccess(null);

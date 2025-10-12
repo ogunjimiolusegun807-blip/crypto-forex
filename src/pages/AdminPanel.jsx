@@ -523,9 +523,21 @@ export default function AdminPanel() {
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
                     Amount: ${withdrawal.amount}<br />
-                    Method: {withdrawal.method}<br />
+                    Method: {withdrawal.method || withdrawal.method || withdrawal.withdrawalType || 'N/A'}<br />
                     Status: <Chip label={withdrawal.status} color={withdrawal.status === 'approved' ? 'success' : withdrawal.status === 'pending' ? 'warning' : 'default'} size="small" />
                   </Typography>
+                  {/* Detailed withdrawal fields */}
+                  <Box sx={{ mt: 1 }}>
+                    {withdrawal.method === 'bank' || withdrawal.withdrawalType === 'bank' ? (
+                      <Box>
+                        <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Bank Name:</strong> {withdrawal.bankName || withdrawal.bank || '-'}</Typography>
+                        <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Account Name:</strong> {withdrawal.accountName || withdrawal.account_name || '-'}</Typography>
+                        <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Account Number:</strong> {withdrawal.accountNumber || withdrawal.account_number || '-'}</Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Wallet Address:</strong> {withdrawal.walletAddress || withdrawal.wallet_address || '-'}</Typography>
+                    )}
+                  </Box>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                     {withdrawal.status === 'pending' && (
                       <>
