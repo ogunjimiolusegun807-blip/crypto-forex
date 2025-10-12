@@ -13,6 +13,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useUser } from '../contexts/UserContext';
 import { userAPI } from '../services/api';
+import CryptoTicker from '../components/CryptoTicker';
 
 export default function Dashboard() {
   // Declare dashboardData before use
@@ -77,12 +78,7 @@ export default function Dashboard() {
   }, [user]);
 
   // Cards use dashboardData
-  // Add tickerData for ticker bar
-  const tickerData = [
-    { label: 'BTC/USDT', value: '$27,000', change: '+2.5%', color: theme.palette.success.main },
-    { label: 'EUR/USD', value: '1.10', change: '-0.3%', color: theme.palette.error.main },
-    { label: 'AAPL', value: '$170', change: '+1.2%', color: theme.palette.success.main }
-  ];
+  // ticker is handled by CryptoTicker component
   const cardGradient = 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)';
   const topCards = [
     { label: 'Total Balance', value: `$${dashboardData.balance.toLocaleString()}`, icon: <AccountBalanceWalletIcon />, gradient: cardGradient },
@@ -174,15 +170,16 @@ export default function Dashboard() {
           </Button>
         </Stack>
       </Box>
-      {/* Ticker Bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2, md: 3 }, bgcolor: '#181A20', p: { xs: 1, sm: 1.5 }, borderRadius: 2, mb: 3, overflowX: 'auto', boxShadow: 1 }}>
-        {tickerData.map((item, idx) => (
-          <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, minWidth: { xs: 140, sm: 160, md: 180 }, flexDirection: { xs: 'column', sm: 'row' }, textAlign: { xs: 'center', sm: 'left' }, py: { xs: 0.5, sm: 0 }, px: { xs: 1, sm: 0 } }}>
-            <Typography variant="subtitle2" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8125rem' } }}>{item.label}</Typography>
-            <Typography variant="body1" color="#fff" fontWeight={700} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' } }}>{item.value}</Typography>
-            <Typography variant="body2" color={item.color} fontWeight={700} sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' } }}>{item.change}</Typography>
-          </Box>
-        ))}
+      <Box sx={{ mb: 3 }}>
+        <CryptoTicker
+          interval={8000}
+          symbols={[
+            { id: 'bitcoin', label: 'BTC/USD', pair: 'usd' },
+            { id: 'ethereum', label: 'ETH/USD', pair: 'usd' },
+            { id: 'litecoin', label: 'LTC/USD', pair: 'usd' },
+            { source: 'fiat', base: 'USD', symbol: 'EUR', label: 'EUR/USD' }
+          ]}
+        />
       </Box>
       {/* Dashboard Cards - Top Row */}
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 0.5 }}>
