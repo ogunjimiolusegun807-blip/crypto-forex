@@ -1,8 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { Box, Card, Typography, TextField, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Card, Typography, TextField, Button, useTheme, IconButton, InputAdornment, Grid } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,7 +15,9 @@ export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, user, loading: userLoading } = useUser();
 
+  const theme = useTheme();
   // Remove auto-redirect on login success
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,63 +41,90 @@ export default function Login() {
     }
   };
   return (
-    <Box minHeight="100vh" display="flex" alignItems="center" justifyContent="center" bgcolor="#181A20">
-      <Box sx={{ position: 'absolute', top: 32, left: 0, right: 0, textAlign: 'center' }}>
-        <img src="/logo.png" alt="Logo" style={{ height: 60, marginBottom: 8 }} />
-        <Typography variant="h4" fontWeight={900} color="primary" sx={{ letterSpacing: 1, mb: 1 }}>
-          INTERSPACE <span style={{ color: '#fff', fontWeight: 700 }}>BROKER</span>
-        </Typography>
-      </Box>
-      <Card sx={{ p: 4, borderRadius: 4, boxShadow: 6, minWidth: 340, maxWidth: 420, width: '100%', bgcolor: '#10131A' }}>
-        <form onSubmit={handleLogin}>
-          <Typography variant="h5" fontWeight={900} color="primary" sx={{ mb: 1 }}>
-            Sign In
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Sign in to start trading crypto, forex and stocks.
-          </Typography>
-          <TextField
-            label="Email or Username"
-            type="email"
-            fullWidth
-            sx={{ mb: 2, bgcolor: '#181A20', borderRadius: 2 }}
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            InputProps={{
-              style: { color: '#fff' },
-            }}
-          />
-          <TextField
-            label="Password"
-            type="password"
-            fullWidth
-            sx={{ mb: 2, bgcolor: '#181A20', borderRadius: 2 }}
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            InputProps={{
-              style: { color: '#fff' },
-            }}
-          />
-          <Button variant="contained" color="primary" fullWidth size="large" type="submit" sx={{ fontWeight: 700, bgcolor: '#0090FF', borderRadius: 2, mt: 1 }} disabled={loading || userLoading}>
-            {(loading || userLoading) ? 'Signing in...' : 'Sign In'}
-          </Button>
-          <Box sx={{ mt: 2, textAlign: 'left' }}>
-            <Link to="/forgot-password" style={{ color: '#0090FF', textDecoration: 'none', fontWeight: 500 }}>Forgot password?</Link>
+    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+      <Grid container spacing={4} sx={{ width: '100%', maxWidth: 1200 }} alignItems="center" justifyContent="center">
+        {/* Left: hero / brand (desktop) */}
+        <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Box sx={{ height: '70vh', borderRadius: 3, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.paper', boxShadow: 3 }}>
+            <Box sx={{ textAlign: 'center', px: 6 }}>
+              <img src="/logo.png" alt="Logo" style={{ height: 84, marginBottom: 12 }} />
+              <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: 1.2 }}>INTERSPACE</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>BROKER</Typography>
+              <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary', maxWidth: 420, mx: 'auto' }}>Securely trade crypto, forex and stocks with institutional grade tools and fast execution.</Typography>
+            </Box>
           </Box>
-          {error && (
-            <Typography color="error" sx={{ mt: 2, textAlign: 'center', fontWeight: 600 }}>{error}</Typography>
-          )}
-          {success && (
-            <Typography color="primary" sx={{ mt: 2, textAlign: 'center', fontWeight: 600 }}>{success}</Typography>
-          )}
-          <Typography sx={{ mt: 2, textAlign: 'center', color: '#fff' }}>
-            Don't have an account?{' '}
-            <Link to="/register" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 700 }}>
-              Register
-            </Link>
-          </Typography>
-        </form>
-      </Card>
+        </Grid>
+
+        {/* Right: form */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ p: { xs: 3, sm: 4 }, borderRadius: 3, boxShadow: 6, maxWidth: 520, mx: { xs: 'auto', md: 0 }, bgcolor: 'background.paper' }}>
+            <form onSubmit={handleLogin}>
+              <Box sx={{ textAlign: { xs: 'center', md: 'left' }, mb: 2 }}>
+                <img src="/logo.png" alt="Logo" style={{ height: 56, marginBottom: 8 }} />
+                <Typography variant="h5" fontWeight={900} color="primary">Sign In</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Sign in to start trading crypto, forex and stocks.</Typography>
+              </Box>
+
+              <TextField
+                label="Email or Username"
+                type="email"
+                fullWidth
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                sx={{ mt: 2, mb: 2 }}
+                InputLabelProps={{ sx: { color: 'text.secondary' } }}
+              />
+
+              <TextField
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                sx={{ mb: 2 }}
+                InputLabelProps={{ sx: { color: 'text.secondary' } }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(s => !s)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+
+              <Button variant="contained" color="primary" fullWidth size="large" type="submit" sx={{ fontWeight: 700, mt: 1, borderRadius: 6 }} disabled={loading || userLoading}>
+                {(loading || userLoading) ? 'Signing in...' : 'SIGN IN'}
+              </Button>
+
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Link to="/forgot-password" style={{ color: theme.palette.primary.main, textDecoration: 'none', fontWeight: 500 }}>Forgot password?</Link>
+                </Box>
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {/* Language selector placeholder - keep accessible area */}
+                  <Button size="small" variant="outlined">EN</Button>
+                </Box>
+              </Box>
+
+              {error && (
+                <Typography color="error" sx={{ mt: 2, textAlign: 'center', fontWeight: 600 }}>{error}</Typography>
+              )}
+              {success && (
+                <Typography color="primary" sx={{ mt: 2, textAlign: 'center', fontWeight: 600 }}>{success}</Typography>
+              )}
+
+              <Typography sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
+                Don't have an account?{' '}
+                <Link to="/register" style={{ color: theme.palette.primary.main, textDecoration: 'none', fontWeight: 700 }}>
+                  Register
+                </Link>
+              </Typography>
+            </form>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   );
 }
