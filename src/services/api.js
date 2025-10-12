@@ -99,14 +99,21 @@ export const userAPI = {
     return await handleResponse(res);
   },
   submitKYC: async (kycData, token) => {
-    const res = await fetch(`${BASE_URL}/api/user/kyc`, {
+    // If caller provided a FormData (with files), send it directly and do NOT set Content-Type
+    const url = `${BASE_URL}/api/user/kyc`;
+    let options = {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ kycData })
-    });
+      body: kycData
+    };
+    if (!(kycData instanceof FormData)) {
+      // If plain object, send JSON body as { kycData }
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify({ kycData });
+    }
+    const res = await fetch(url, options);
     return await handleResponse(res);
   },
   getKYC: async (token) => {

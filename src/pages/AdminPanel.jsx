@@ -206,23 +206,48 @@ export default function AdminPanel() {
                     </Box>
                     <Chip label={kyc.kycStatus} color={kyc.kycStatus === 'verified' ? 'success' : kyc.kycStatus === 'pending' ? 'warning' : 'default'} />
                   </Box>
-                  <Typography variant="body2" color="rgba(255,255,255,0.8)">
-                    <strong>Nationality:</strong> {kyc.kycData?.nationality || '-'}<br />
-                    <strong>Phone:</strong> {kyc.kycData?.phoneNumber || '-'}<br />
-                    <strong>Address:</strong> {kyc.kycData?.address || '-'}, {kyc.kycData?.city || '-'}, {kyc.kycData?.state || '-'} {kyc.kycData?.zipCode || ''}<br />
-                    <strong>Document:</strong> {kyc.kycData?.documentType || '-'} {kyc.kycData?.documentNumber ? `• ${kyc.kycData.documentNumber}` : ''}
-                  </Typography>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
-                    {/* Thumbnails */}
-                    {kyc.kycData?.identityDocumentUrl && (
-                      <img src={kyc.kycData.identityDocumentUrl} alt="identity" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} onClick={() => setPreviewImage(kyc.kycData.identityDocumentUrl)} />
+                  {/* Render all available KYC fields dynamically */}
+                  <Box sx={{ mt: 1 }}>
+                    {kyc.kycData && Object.keys(kyc.kycData).length > 0 ? (
+                      <Box sx={{ mb: 1 }}>
+                        {Object.entries(kyc.kycData).filter(([k, v]) => typeof v !== 'object').map(([key, val]) => (
+                          <Typography key={key} variant="body2" color="rgba(255,255,255,0.8)">
+                            <strong>{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, s => s.toUpperCase())}:</strong> {val || '-'}
+                          </Typography>
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="rgba(255,255,255,0.8)">No detailed KYC fields submitted.</Typography>
                     )}
-                    {kyc.kycData?.addressDocumentUrl && (
-                      <img src={kyc.kycData.addressDocumentUrl} alt="address" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} onClick={() => setPreviewImage(kyc.kycData.addressDocumentUrl)} />
-                    )}
-                    {kyc.kycData?.selfieUrl && (
-                      <img src={kyc.kycData.selfieUrl} alt="selfie" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} onClick={() => setPreviewImage(kyc.kycData.selfieUrl)} />
-                    )}
+
+                    {/* Image thumbnails (support multiple possible property names and nested shapes) */}
+                    <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                      {(() => {
+                        const imgUrls = [];
+                        const data = kyc.kycData || {};
+                        // Common single-field names
+                        ['identityDocumentUrl', 'identityDocument', 'addressDocumentUrl', 'addressDocument', 'selfieUrl', 'selfie', 'photo', 'image'].forEach(name => {
+                          if (data[name]) imgUrls.push({ url: data[name], label: name });
+                        });
+                        // If files array/object present
+                        if (data.files && Array.isArray(data.files)) {
+                          data.files.forEach(f => { if (f.url) imgUrls.push({ url: f.url, label: f.name || 'file' }); });
+                        }
+                        if (data.files && typeof data.files === 'object') {
+                          Object.values(data.files).forEach(f => { if (f && f.url) imgUrls.push({ url: f.url, label: f.name || 'file' }); });
+                        }
+                        // Some backends store raw file URLs under 'documents' or 'attachments'
+                        if (data.documents && Array.isArray(data.documents)) {
+                          data.documents.forEach(d => { if (d.url) imgUrls.push({ url: d.url, label: d.type || 'document' }); });
+                        }
+                        // Deduplicate
+                        const seen = new Set();
+                        const unique = imgUrls.filter(i => { if (!i.url) return false; if (seen.has(i.url)) return false; seen.add(i.url); return true; });
+                        return unique.length ? unique.map((img, idx) => (
+                          <img key={idx} src={img.url} alt={img.label} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }} onClick={() => setPreviewImage(img.url)} />
+                        )) : <Typography variant="body2" color="rgba(255,255,255,0.8)">No uploaded images available.</Typography>;
+                      })()}
+                    </Box>
                   </Box>
                   <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                     <Button variant="contained" color="success" disabled={kyc.kycStatus === 'verified' || loading} onClick={() => handleApproveKYC(kyc.activityId)}>
