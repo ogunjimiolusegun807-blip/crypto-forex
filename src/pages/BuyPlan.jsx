@@ -119,7 +119,7 @@ const languages = [
 
 export default function BuyPlan() {
   const theme = useTheme();
-  const { user, loading, error } = useUser();
+  const { user, loading, error, refreshStats } = useUser();
   const navigate = useNavigate();
   const [investDialogOpen, setInvestDialogOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -168,6 +168,17 @@ export default function BuyPlan() {
 
   const handleConfirmInvestment = async () => {
     try {
+      // Check balance before attempting purchase
+      const balance = Number(user?.balance || 0);
+      const amount = Number(investAmount || 0);
+      if (amount <= 0) {
+        setNotification({ open: true, type: 'error', message: 'Enter a valid investment amount.' });
+        return;
+      }
+      if (balance < amount) {
+        setNotification({ open: true, type: 'error', message: `Insufficient balance. Please deposit $${(amount - balance).toFixed(2)} and try again.` });
+        return;
+      }
       const token = localStorage.getItem('authToken');
       await userAPI.buyPlan(selectedPlan.id, investAmount, token);
       setNotification({ open: true, type: 'success', message: `Successfully purchased ${selectedPlan.name}` });
@@ -177,6 +188,8 @@ export default function BuyPlan() {
       // Refresh plans history
       const res = await userAPI.getPlans(token);
       setPlansHistory(res.plans || []);
+      // Refresh user balance/profile
+      try { await refreshStats(); } catch (e) { /* ignore refresh errors */ }
     } catch (err) {
       setNotification({ open: true, type: 'error', message: err.message || 'Plan purchase failed.' });
     }

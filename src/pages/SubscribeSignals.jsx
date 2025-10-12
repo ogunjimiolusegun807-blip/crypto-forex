@@ -225,12 +225,13 @@ const signalPlans = [
 ];
 
 export default function SubscribeSignals() {
-  const { user, loading, error } = useUser();
+  const { user, loading, error, refreshStats } = useUser();
   const theme = useTheme();
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [subscribeDialog, setSubscribeDialog] = useState(false);
-  const [accountBalance] = useState(0.00); // This would come from your state management
+  // Use real balance from user context
+  const accountBalance = Number(user?.balance || 0);
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
   const [signalsHistory, setSignalsHistory] = useState([]);
   const [notification, setNotification] = useState({ open: false, type: '', message: '' });
@@ -254,6 +255,11 @@ export default function SubscribeSignals() {
 
   const handleConfirmSubscribe = async () => {
     try {
+      // Check balance before subscribing
+      if (accountBalance < selectedPlan.price) {
+        setNotification({ open: true, type: 'error', message: `Insufficient balance. Please deposit $${(selectedPlan.price - accountBalance).toFixed(2)} and try again.` });
+        return;
+      }
       const token = localStorage.getItem('authToken');
       await userAPI.subscribeSignal(selectedPlan.id, token);
       setNotification({ open: true, type: 'success', message: `Successfully subscribed to ${selectedPlan.name}` });
@@ -262,9 +268,7 @@ export default function SubscribeSignals() {
       const res = await userAPI.getSignals(token);
       setSignalsHistory(res.signals || []);
       // Deduct price from dashboard balance
-      if (window.location.pathname.includes('dashboard')) {
-        window.location.reload();
-      }
+      try { await refreshStats(); } catch (e) { if (window.location.pathname.includes('dashboard')) { window.location.reload(); } }
     } catch (err) {
       setNotification({ open: true, type: 'error', message: err.message || 'Signal subscription failed.' });
     }
