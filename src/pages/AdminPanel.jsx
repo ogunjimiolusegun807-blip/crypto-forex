@@ -99,6 +99,8 @@ export default function AdminPanel() {
   // Withdrawal state
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+  // per-card processing state to avoid global loading races
+  const [processing, setProcessing] = useState({});
 
   // Fetch KYC, deposits, withdrawals
   useEffect(() => {
@@ -695,46 +697,54 @@ export default function AdminPanel() {
   // Approve/reject withdrawal
   // Approve/reject withdrawal (robust: accepts id or full withdrawal object)
   const handleApproveWithdrawal = async (payload) => {
-    setLoading(true);
     const token = localStorage.getItem('adminToken');
+    const isObj = payload && typeof payload === 'object';
+    const key = isObj ? (payload.id || payload.activityId || payload._id || payload.txnId || payload.transactionId || payload.userId || (payload.activity && (payload.activity.id || payload.activity._id)) || JSON.stringify(payload)) : String(payload);
+    setProcessing(p => ({ ...p, [key]: true }));
     try {
-      // payload can be an id string/number or the full withdrawal object
-      const isObj = payload && typeof payload === 'object';
-      const id = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
-      let res;
-      if (id) {
-        // try approve by activity id first
+      // build candidate ids to try (more exhaustive for legacy items)
+      const candidates = [];
+      if (isObj) {
+        const a = payload.activity || {};
+        candidates.push(a.id, a.activityId, a._id, payload.activityId, payload.id, payload._id, payload.txnId, payload.transactionId, payload.withdrawalId);
+      } else {
+        candidates.push(payload);
+      }
+      // unique and truthy
+      const idCandidates = Array.from(new Set((candidates || []).filter(Boolean).map(String)));
+      let res = null;
+      // try each candidate id against the activity endpoint
+      for (const cid of idCandidates) {
         try {
-          res = await userAPI.approveWithdrawal(id, token);
+          res = await userAPI.approveWithdrawal(cid, token);
+          if (res) { break; }
         } catch (e) {
-          // if backend complains activity not found, fall through to user fallback
+          // try next candidate
           res = null;
         }
       }
+      // if still no result, fall back to user-based endpoints (by userId or user._id)
       if (!res) {
-        // fallback to user-based approve if we have a user id
-        const userId = (isObj && (payload.userId || payload.user?.id)) || (res && (res.userId || res.user?.id)) || id;
+        const userId = (isObj && (payload.userId || payload.user?.id || payload.user?._id)) || idCandidates[0];
         if (userId) {
           try { res = await userAPI.approveWithdrawalByUser(userId, token); } catch (e) { res = null; }
         }
       }
-      // remove approved withdrawal(s) from admin list using multiple possible id fields
-      const idToRemove = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
-  setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
-  // refresh authoritative list from server so items removed server-side don't reappear after page reload
-  try { await refreshPendingWithdrawals(token); } catch (e) {}
+      // remove any matching items locally and refresh authoritative list
+      try {
+        await refreshPendingWithdrawals(token);
+      } catch (e) {}
       setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
-      // Dispatch user-updated from server response when available
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
         if (res.balance !== undefined) updated.balance = res.balance;
         if (res.activity) updated.activity = res.activity;
-        updated.id = res.userId || res.user?.id || (isObj && (payload.userId || payload.user?.id)) || idToRemove;
+        updated.id = res.userId || res.user?.id || (isObj && (payload.userId || payload.user?.id)) || idCandidates[0];
         try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       } else {
-        // best-effort fallback: synthesize a completed activity so UI reflects the change
-        const withdrawalObj = isObj ? payload : withdrawalRequests.find(w => (w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove))));
-        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || idToRemove;
+        // best-effort UI update
+        const withdrawalObj = isObj ? payload : withdrawalRequests.find(w => idCandidates.includes(String(w.id)) || idCandidates.includes(String(w.activityId)) || (w.activity && idCandidates.includes(String(w.activity.id))));
+        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || idCandidates[0];
         let balanceFromServer;
         try {
           const users = await userAPI.adminGetAllUsers(token);
@@ -760,39 +770,44 @@ export default function AdminPanel() {
     } catch (err) {
       setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve withdrawal.' });
     }
-    setLoading(false);
+    setProcessing(p => ({ ...p, [key]: false }));
   };
 
   const handleRejectWithdrawal = async (payload) => {
-    setLoading(true);
     const token = localStorage.getItem('adminToken');
+    const isObj = payload && typeof payload === 'object';
+    const key = isObj ? (payload.id || payload.activityId || payload._id || payload.txnId || payload.transactionId || payload.userId || (payload.activity && (payload.activity.id || payload.activity._id)) || JSON.stringify(payload)) : String(payload);
+    setProcessing(p => ({ ...p, [key]: true }));
     try {
-      const isObj = payload && typeof payload === 'object';
-      const id = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
-      let res;
-      if (id) {
-        try { res = await userAPI.rejectWithdrawal(id, token); } catch (e) { res = null; }
+      const candidates = [];
+      if (isObj) {
+        const a = payload.activity || {};
+        candidates.push(a.id, a.activityId, a._id, payload.activityId, payload.id, payload._id, payload.txnId, payload.transactionId, payload.withdrawalId);
+      } else {
+        candidates.push(payload);
+      }
+      const idCandidates = Array.from(new Set((candidates || []).filter(Boolean).map(String)));
+      let res = null;
+      for (const cid of idCandidates) {
+        try { res = await userAPI.rejectWithdrawal(cid, token); if (res) break; } catch (e) { res = null; }
       }
       if (!res) {
-        const userId = (isObj && (payload.userId || payload.user?.id)) || (res && (res.userId || res.user?.id)) || id;
+        const userId = (isObj && (payload.userId || payload.user?.id || payload.user?._id)) || idCandidates[0];
         if (userId) {
           try { res = await userAPI.rejectWithdrawalByUser(userId, token); } catch (e) { res = null; }
         }
       }
-      const idToRemove = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
-  setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
-  // refresh authoritative list from server so items removed server-side don't reappear after page reload
-  try { await refreshPendingWithdrawals(token); } catch (e) {}
+      try { await refreshPendingWithdrawals(token); } catch (e) {}
       setActionNotification({ open: true, type: 'info', message: 'Withdrawal rejected. User notified.' });
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
         if (res.balance !== undefined) updated.balance = res.balance;
         if (res.activity) updated.activity = res.activity;
-        updated.id = res.userId || res.user?.id || (isObj && (payload.userId || payload.user?.id)) || idToRemove;
+        updated.id = res.userId || res.user?.id || (isObj && (payload.userId || payload.user?.id)) || idCandidates[0];
         try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       } else {
-        const withdrawalObj = isObj ? payload : withdrawalRequests.find(w => (w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove))));
-        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || idToRemove;
+        const withdrawalObj = isObj ? payload : withdrawalRequests.find(w => idCandidates.includes(String(w.id)) || idCandidates.includes(String(w.activityId)) || (w.activity && idCandidates.includes(String(w.activity.id))));
+        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || idCandidates[0];
         let balanceFromServer;
         try {
           const users = await userAPI.adminGetAllUsers(token);
@@ -818,7 +833,7 @@ export default function AdminPanel() {
     } catch (err) {
       setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject withdrawal.' });
     }
-    setLoading(false);
+    setProcessing(p => ({ ...p, [key]: false }));
   };
 
   // Deposit tab
@@ -1006,11 +1021,11 @@ export default function AdminPanel() {
                       const idToUse = withdrawal.id || withdrawal.activityId || (withdrawal.activity && (withdrawal.activity.id || withdrawal.activity.activityId));
                       return (
                         <>
-                          <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveWithdrawal(withdrawal)}>
-                            {loading ? 'Approving...' : 'Approve'}
+                          <Button variant="contained" color="success" size="small" disabled={!!processing[(withdrawal.id || withdrawal.activityId || withdrawal._id || withdrawal.txnId || withdrawal.transactionId || JSON.stringify(withdrawal))]} onClick={() => handleApproveWithdrawal(withdrawal)}>
+                            {processing[(withdrawal.id || withdrawal.activityId || withdrawal._id || withdrawal.txnId || withdrawal.transactionId || JSON.stringify(withdrawal))] ? 'Approving...' : 'Approve'}
                           </Button>
-                          <Button variant="contained" color="error" size="small" disabled={loading} onClick={() => handleRejectWithdrawal(withdrawal)}>
-                            {loading ? 'Rejecting...' : 'Reject'}
+                          <Button variant="contained" color="error" size="small" disabled={!!processing[(withdrawal.id || withdrawal.activityId || withdrawal._id || withdrawal.txnId || withdrawal.transactionId || JSON.stringify(withdrawal))]} onClick={() => handleRejectWithdrawal(withdrawal)}>
+                            {processing[(withdrawal.id || withdrawal.activityId || withdrawal._id || withdrawal.txnId || withdrawal.transactionId || JSON.stringify(withdrawal))] ? 'Rejecting...' : 'Reject'}
                           </Button>
                         </>
                       );
