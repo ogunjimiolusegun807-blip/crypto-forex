@@ -1006,7 +1006,7 @@ export default function AdminPanel() {
   const renderSettings = () => (
     <Box>
       <Typography variant="h5" color="primary" fontWeight={700} gutterBottom>Admin Settings</Typography>
-  <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3, maxWidth: 600, mx: 'auto', mt: 2 }}>
+  <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3, maxWidth: 720, mx: 'auto', mt: 2, p: 1 }}>
         <CardContent>
           <form
             onSubmit={async e => {
@@ -1034,12 +1034,15 @@ export default function AdminPanel() {
             }}
           >
             <Stack spacing={3}>
-              <TextField label="Admin Email" variant="outlined" fullWidth value={adminCreds.email} disabled sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' } }} />
-              <TextField label="Old Password" type="password" variant="outlined" fullWidth value={oldPassword} onChange={e => setOldPassword(e.target.value)} sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' } }} />
-              <TextField label="New Password" type="password" variant="outlined" fullWidth value={adminCreds.password} onChange={e => setAdminCreds(c => ({ ...c, password: e.target.value }))} sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' } }} />
-              <Button variant="contained" color="primary" type="submit" sx={{ fontWeight: 700, py: 1.5 }} disabled={settingsLoading}>
-                {settingsLoading ? 'Updating...' : 'Change Password'}
-              </Button>
+              <TextField label="Admin Email" variant="outlined" fullWidth value={adminCreds.email} disabled sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' }, borderRadius: 1 }} />
+              <TextField label="Old Password" type="password" variant="outlined" fullWidth value={oldPassword} onChange={e => setOldPassword(e.target.value)} sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' }, borderRadius: 1 }} />
+              <TextField label="New Password" type="password" variant="outlined" fullWidth value={adminCreds.password} onChange={e => setAdminCreds(c => ({ ...c, password: e.target.value }))} sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' }, borderRadius: 1 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 2 }}>
+                <Button variant="contained" color="primary" type="submit" sx={{ fontWeight: 700, py: 1.25 }} disabled={settingsLoading}>
+                  {settingsLoading ? 'Updating...' : 'Change Password'}
+                </Button>
+                <Button variant="outlined" color="inherit" onClick={() => { setOldPassword(''); setAdminCreds(c => ({ ...c, password: '' })); }} sx={{ borderColor: 'divider' }}>Reset</Button>
+              </Box>
             </Stack>
           </form>
         </CardContent>
@@ -1149,7 +1152,7 @@ export default function AdminPanel() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="caption" color="text.secondary">{mode === 'light' ? 'Light' : 'Dark'}</Typography>
             <Switch size="small" checked={mode === 'dark'} onChange={(e) => setMode(e.target.checked ? 'dark' : 'light')} />
-            <IconButton color="inherit" onClick={() => { localStorage.removeItem('adminToken'); navigate('/admin-login'); }} title="Logout">
+            <IconButton color="error" onClick={() => { localStorage.removeItem('adminToken'); navigate('/admin-login'); }} title="Logout" sx={{ '&:hover': { bgcolor: 'rgba(244, 63, 94, 0.08)' } }}>
               <LogoutIcon />
             </IconButton>
             <IconButton color="inherit" sx={{ display: { md: 'none' } }} onClick={() => setDrawerOpen(true)}><MenuIcon /></IconButton>
