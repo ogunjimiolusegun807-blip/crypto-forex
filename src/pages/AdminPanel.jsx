@@ -8,6 +8,8 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [actionNotification, setActionNotification] = useState({ open: false, type: '', message: '' });
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearInProgress, setClearInProgress] = useState(false);
   const navigate = useNavigate();
 
   // Super admin check
@@ -745,6 +747,9 @@ export default function AdminPanel() {
         <Tab label="Users" />
         <Tab label="Settings" />
       </Tabs>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Button variant="outlined" color="inherit" onClick={() => setClearDialogOpen(true)}>Clear Tab</Button>
+      </Box>
       <Divider sx={{ mb: 3, bgcolor: 'primary.main' }} />
       {actionNotification.open && (
         <Box sx={{ position: 'fixed', top: 24, left: 0, right: 0, zIndex: 1500, display: 'flex', justifyContent: 'center' }}>
@@ -814,6 +819,38 @@ export default function AdminPanel() {
               setActionNotification({ open: true, type: 'error', message: err.message || 'Manual credit failed.' });
             }
           }} variant="contained" color="primary">Credit</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Clear Tab Confirmation Dialog */}
+      <Dialog open={clearDialogOpen} onClose={() => setClearDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogContent>
+          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Clear {tab === 0 ? 'KYC' : tab === 1 ? 'Deposits' : tab === 2 ? 'Withdrawals' : 'Items'}</Typography>
+          <Typography variant="body2" color="text.secondary">This will remove all items currently visible in this admin tab. This action only clears the admin UI queue locally — items may still exist on the server unless the corresponding backend endpoints mark them as archived. Proceed?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClearDialogOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={async () => {
+            setClearInProgress(true);
+            try {
+              if (tab === 0) {
+                // Clear KYC requests locally
+                setKycRequests([]);
+                setActionNotification({ open: true, type: 'success', message: 'KYC queue cleared locally.' });
+              } else if (tab === 1) {
+                setDepositRequests([]);
+                setActionNotification({ open: true, type: 'success', message: 'Deposit queue cleared locally.' });
+              } else if (tab === 2) {
+                setWithdrawalRequests([]);
+                setActionNotification({ open: true, type: 'success', message: 'Withdrawal queue cleared locally.' });
+              } else {
+                setActionNotification({ open: true, type: 'info', message: 'Nothing to clear on this tab.' });
+              }
+            } catch (e) {
+              setActionNotification({ open: true, type: 'error', message: 'Failed to clear tab.' });
+            }
+            setClearInProgress(false);
+            setClearDialogOpen(false);
+          }} variant="contained" color="primary" disabled={clearInProgress}>{clearInProgress ? 'Clearing...' : 'Clear'}</Button>
         </DialogActions>
       </Dialog>
     </Box>
