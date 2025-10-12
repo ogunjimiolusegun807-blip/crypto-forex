@@ -11,6 +11,7 @@ import PersonOffIcon from '@mui/icons-material/PersonOff';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PaymentIcon from '@mui/icons-material/Payment';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate } from 'react-router-dom';
 import { userAPI } from '../services/api';
 
@@ -289,7 +290,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {plans.map(plan => (
             <Grid item xs={12} md={6} lg={4} key={plan.id}>
-              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
+              <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>{plan.name}</Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -404,7 +405,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {signals.map(signal => (
             <Grid item xs={12} md={6} lg={4} key={signal.id}>
-              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
+              <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>{signal.name}</Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -545,7 +546,7 @@ export default function AdminPanel() {
           <Grid container spacing={3}>
             {deduped.map(kyc => (
               <Grid item xs={12} md={6} lg={4} key={getKey(kyc)}>
-                <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+                <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 3, boxShadow: 6 }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                       <Avatar sx={{ bgcolor: 'primary.main' }} />
@@ -570,7 +571,7 @@ export default function AdminPanel() {
 
         {/* KYC Detail Dialog */}
         <Dialog open={kycDialogOpen} onClose={() => { setKycDialogOpen(false); setSelectedKyc(null); }} maxWidth="md" fullWidth>
-          <DialogContent sx={{ bgcolor: '#232742' }}>
+          <DialogContent sx={{ bgcolor: 'background.paper' }}>
             {selectedKyc ? (
               <Box>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
@@ -1005,7 +1006,7 @@ export default function AdminPanel() {
   const renderSettings = () => (
     <Box>
       <Typography variant="h5" color="primary" fontWeight={700} gutterBottom>Admin Settings</Typography>
-  <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)', maxWidth: 600, mx: 'auto', mt: 2 }}>
+  <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3, maxWidth: 600, mx: 'auto', mt: 2 }}>
         <CardContent>
           <form
             onSubmit={async e => {
@@ -1019,9 +1020,13 @@ export default function AdminPanel() {
                   oldPassword,
                   newPassword: adminCreds.password
                 }, token);
-                setActionNotification({ open: true, type: 'success', message: 'Password updated successfully!' });
+                // After updating password, force logout so admin can re-login with new creds
+                setActionNotification({ open: true, type: 'success', message: 'Password updated. Please log in with your new password.' });
                 setOldPassword('');
                 setAdminCreds(c => ({ ...c, password: '' }));
+                try { localStorage.removeItem('adminToken'); } catch (e) {}
+                navigate('/admin-login');
+                return;
               } catch (err) {
                 setActionNotification({ open: true, type: 'error', message: err.message || 'Password update failed.' });
               }
@@ -1029,9 +1034,9 @@ export default function AdminPanel() {
             }}
           >
             <Stack spacing={3}>
-              <TextField label="Admin Email" variant="outlined" fullWidth value={adminCreds.email} disabled sx={{ bgcolor: '#232742', input: { color: '#fff' }, label: { color: 'primary.main' } }} />
-              <TextField label="Old Password" type="password" variant="outlined" fullWidth value={oldPassword} onChange={e => setOldPassword(e.target.value)} sx={{ bgcolor: '#232742', input: { color: '#fff' }, label: { color: 'primary.main' } }} />
-              <TextField label="New Password" type="password" variant="outlined" fullWidth value={adminCreds.password} onChange={e => setAdminCreds(c => ({ ...c, password: e.target.value }))} sx={{ bgcolor: '#232742', input: { color: '#fff' }, label: { color: 'primary.main' } }} />
+              <TextField label="Admin Email" variant="outlined" fullWidth value={adminCreds.email} disabled sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' } }} />
+              <TextField label="Old Password" type="password" variant="outlined" fullWidth value={oldPassword} onChange={e => setOldPassword(e.target.value)} sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' } }} />
+              <TextField label="New Password" type="password" variant="outlined" fullWidth value={adminCreds.password} onChange={e => setAdminCreds(c => ({ ...c, password: e.target.value }))} sx={{ bgcolor: 'background.default', input: { color: 'text.primary' }, label: { color: 'primary.main' } }} />
               <Button variant="contained" color="primary" type="submit" sx={{ fontWeight: 700, py: 1.5 }} disabled={settingsLoading}>
                 {settingsLoading ? 'Updating...' : 'Change Password'}
               </Button>
@@ -1144,6 +1149,9 @@ export default function AdminPanel() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="caption" color="text.secondary">{mode === 'light' ? 'Light' : 'Dark'}</Typography>
             <Switch size="small" checked={mode === 'dark'} onChange={(e) => setMode(e.target.checked ? 'dark' : 'light')} />
+            <IconButton color="inherit" onClick={() => { localStorage.removeItem('adminToken'); navigate('/admin-login'); }} title="Logout">
+              <LogoutIcon />
+            </IconButton>
             <IconButton color="inherit" sx={{ display: { md: 'none' } }} onClick={() => setDrawerOpen(true)}><MenuIcon /></IconButton>
           </Box>
         </Box>
@@ -1189,7 +1197,7 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
+                <Card sx={{ p: 2, bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.inactiveUsers} color="warning">
@@ -1204,7 +1212,7 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
+                <Card sx={{ p: 2, bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.verifiedKyc} color="success">
@@ -1219,7 +1227,7 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
+                <Card sx={{ p: 2, bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.deposits} color="primary">
