@@ -24,6 +24,8 @@ export default function AdminPanel() {
   const [kycRequests, setKycRequests] = useState([]);
   const [kycLoading, setKycLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [selectedKyc, setSelectedKyc] = useState(null);
+  const [kycDialogOpen, setKycDialogOpen] = useState(false);
   // Helper to derive activity id from various possible shapes
   const getActivityId = (kyc) => kyc?.activityId || kyc?.id || (kyc?.activity && (kyc.activity.id || kyc.activity.activityId)) || null;
   // helper to normalize status and detect completed states
@@ -263,143 +265,137 @@ export default function AdminPanel() {
       </Box>
     </Box>
   );
-  const renderKYC = () => (
-    <Box>
-      <Typography variant="h5" color="primary" fontWeight={700} gutterBottom>KYC Management</Typography>
-      {kycLoading ? (
-        <Alert severity="info">Loading KYC requests...</Alert>
-      ) : kycRequests.length === 0 ? (
-        <Alert severity="info">No KYC requests yet.</Alert>
-      ) : (
-        <Grid container spacing={3}>
-          {kycRequests.map(kyc => (
-            <Grid item xs={12} md={6} lg={4} key={kyc.activityId}>
-              <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main' }} />
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" fontWeight={700} color="primary">
-                        {kyc.kycData?.firstName || kyc.username}
-                      </Typography>
-                      <Typography variant="caption" color="rgba(255,255,255,0.6)">User: {kyc.username} • {kyc.email}</Typography>
-                    </Box>
-                    <Chip label={kyc.kycStatus} color={kyc.kycStatus === 'verified' ? 'success' : kyc.kycStatus === 'pending' ? 'warning' : 'default'} />
-                  </Box>
-                  {/* Render all available KYC fields dynamically */}
-                  <Box sx={{ mt: 1 }}>
-                    {kyc.kycData && Object.keys(kyc.kycData).length > 0 ? (
-                      <Box sx={{ mb: 1 }}>
-                        {Object.entries(kyc.kycData).filter(([k, v]) => typeof v !== 'object').map(([key, val]) => (
-                          <Typography key={key} variant="body2" color="rgba(255,255,255,0.8)">
-                            <strong>{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, s => s.toUpperCase())}:</strong> {val || '-'}
-                          </Typography>
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="rgba(255,255,255,0.8)">No detailed KYC fields submitted.</Typography>
-                    )}
+  const renderKYC = () => {
+    // deduplicate by user (prefer KYC with more fields/images)
+    const getKey = (k) => (k.userId || k.user?.id || k.email || k.username || getActivityId(k) || JSON.stringify(k));
+    const score = (k) => {
+      let s = 0;
+      if (k.kycData && Object.keys(k.kycData).length) s += Object.keys(k.kycData).length;
+      const data = k.kycData || {};
+      if (data.files && Array.isArray(data.files)) s += data.files.length * 2;
+      if (data.documents && Array.isArray(data.documents)) s += data.documents.length * 2;
+      if (k.kycStatus) s += (k.kycStatus === 'pending' ? 0 : 1);
+      return s;
+    };
+    const map = new Map();
+    for (const k of kycRequests) {
+      const key = getKey(k);
+      if (!map.has(key)) map.set(key, k);
+      else {
+        const existing = map.get(key);
+        if (score(k) > score(existing)) map.set(key, k);
+      }
+    }
+    const deduped = Array.from(map.values());
 
-                    {/* Image thumbnails (support multiple possible property names and nested shapes) */}
-                    <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                      {(() => {
-                        const imgUrls = [];
-                        const data = kyc.kycData || {};
-                        // Common single-field names
-                        ['identityDocumentUrl', 'identityDocument', 'addressDocumentUrl', 'addressDocument', 'selfieUrl', 'selfie', 'photo', 'image'].forEach(name => {
-                          if (data[name]) imgUrls.push({ url: data[name], label: name });
-                        });
-                        // If files array/object present
-                        if (data.files && Array.isArray(data.files)) {
-                          data.files.forEach(f => { if (f.url) imgUrls.push({ url: f.url, label: f.name || 'file' }); });
-                        }
-                        if (data.files && typeof data.files === 'object') {
-                          Object.values(data.files).forEach(f => { if (f && f.url) imgUrls.push({ url: f.url, label: f.name || 'file' }); });
-                        }
-                        // Some backends store raw file URLs under 'documents' or 'attachments'
-                        if (data.documents && Array.isArray(data.documents)) {
-                          data.documents.forEach(d => { if (d.url) imgUrls.push({ url: d.url, label: d.type || 'document' }); });
-                        }
-                        // Deduplicate
-                        const seen = new Set();
-                        const unique = imgUrls.filter(i => { if (!i.url) return false; if (seen.has(i.url)) return false; seen.add(i.url); return true; });
-                        return unique.length ? unique.map((img, idx) => (
-                          <img key={idx} src={img.url} alt={img.label} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }} onClick={() => setPreviewImage(img.url)} />
-                        )) : <Typography variant="body2" color="rgba(255,255,255,0.8)">No uploaded images available.</Typography>;
-                      })()}
+    return (
+      <Box>
+        <Typography variant="h5" color="primary" fontWeight={700} gutterBottom>KYC Management</Typography>
+        {kycLoading ? (
+          <Alert severity="info">Loading KYC requests...</Alert>
+        ) : deduped.length === 0 ? (
+          <Alert severity="info">No KYC requests yet.</Alert>
+        ) : (
+          <Grid container spacing={3}>
+            {deduped.map(kyc => (
+              <Grid item xs={12} md={6} lg={4} key={getKey(kyc)}>
+                <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <Avatar sx={{ bgcolor: 'primary.main' }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" fontWeight={700} color="primary">{kyc.kycData?.firstName || kyc.username}</Typography>
+                        <Typography variant="caption" color="rgba(255,255,255,0.6)">User: {kyc.username} • {kyc.email}</Typography>
+                      </Box>
+                      <Chip label={kyc.kycStatus || 'pending'} color={kyc.kycStatus === 'verified' ? 'success' : kyc.kycStatus === 'pending' ? 'warning' : 'default'} />
                     </Box>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="body2" color="rgba(255,255,255,0.8)">{kyc.kycData && Object.keys(kyc.kycData).length ? Object.entries(kyc.kycData).slice(0,3).map(([k, v]) => `${k}: ${v}`).join(' · ') : 'No detailed KYC fields submitted.'}</Typography>
+                    </Box>
+                    <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                      <Button variant="contained" color="primary" size="small" onClick={() => { setSelectedKyc(kyc); setKycDialogOpen(true); }}>View</Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {/* KYC Detail Dialog */}
+        <Dialog open={kycDialogOpen} onClose={() => { setKycDialogOpen(false); setSelectedKyc(null); }} maxWidth="md" fullWidth>
+          <DialogContent sx={{ bgcolor: '#232742' }}>
+            {selectedKyc ? (
+              <Box>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h5" color="primary" fontWeight={700}>{selectedKyc.username || selectedKyc.kycData?.firstName}</Typography>
+                    <Typography variant="caption" color="rgba(255,255,255,0.6)">User: {selectedKyc.username} • {selectedKyc.email}</Typography>
                   </Box>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                    {
-                      (() => {
-                        const id = getActivityId(kyc);
-                        const userId = kyc.userId || kyc.userId || kyc.user?.id || kyc.userId;
-                        const canApprove = (!id && userId) || id;
-                        return (
-                          <>
-                            <Button
-                              variant="contained"
-                              color="success"
-                              disabled={!canApprove || kyc.kycStatus === 'verified' || loading}
-                              onClick={async () => {
-                                const token = localStorage.getItem('adminToken');
-                                if (id) {
-                                  await handleApproveKYC(id);
-                                  return;
-                                }
-                                if (userId) {
-                                  setLoading(true);
-                                  try {
-                                    await userAPI.approveKYCByUser(userId, token);
-                                    await refreshPendingKYC(token);
-                                    setActionNotification({ open: true, type: 'success', message: 'KYC approved by user id.' });
-                                  } catch (err) {
-                                    setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve by user.' });
-                                  }
-                                  setLoading(false);
-                                }
-                              }}
-                            >
-                              {loading ? 'Approving...' : 'Approve'}
-                            </Button>
-                            <Button
-                              variant="contained"
-                              color="error"
-                              disabled={!canApprove || kyc.kycStatus === 'rejected' || loading}
-                              onClick={async () => {
-                                const token = localStorage.getItem('adminToken');
-                                if (id) {
-                                  await handleRejectKYC(id);
-                                  return;
-                                }
-                                if (userId) {
-                                  setLoading(true);
-                                  try {
-                                    await userAPI.rejectKYCByUser(userId, token);
-                                      await refreshPendingKYC(token);
-                                      setActionNotification({ open: true, type: 'info', message: 'KYC rejected by user id.' });
-                                  } catch (err) {
-                                    setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject by user.' });
-                                  }
-                                  setLoading(false);
-                                }
-                              }}
-                            >
-                              {loading ? 'Rejecting...' : 'Reject'}
-                            </Button>
-                          </>
-                        );
-                      })()
-                    }
+                  <Chip label={selectedKyc.kycStatus || 'pending'} color={selectedKyc.kycStatus === 'verified' ? 'success' : 'warning'} />
+                </Box>
+                <Box>
+                  {selectedKyc.kycData && Object.keys(selectedKyc.kycData).length > 0 ? (
+                    Object.entries(selectedKyc.kycData).filter(([k, v]) => typeof v !== 'object').map(([key, val]) => (
+                      <Typography key={key} variant="body2" color="rgba(255,255,255,0.8)"><strong>{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, s => s.toUpperCase())}:</strong> {val || '-'}</Typography>
+                    ))
+                  ) : <Typography variant="body2" color="rgba(255,255,255,0.8)">No detailed KYC fields submitted.</Typography>}
+
+                  <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    {(() => {
+                      const imgUrls = [];
+                      const data = selectedKyc.kycData || {};
+                      ['identityDocumentUrl','identityDocument','addressDocumentUrl','addressDocument','selfieUrl','selfie','photo','image'].forEach(n => { if (data[n]) imgUrls.push({ url: data[n], label: n }); });
+                      if (data.files && Array.isArray(data.files)) data.files.forEach(f => { if (f.url) imgUrls.push({ url: f.url, label: f.name || 'file' }); });
+                      if (data.documents && Array.isArray(data.documents)) data.documents.forEach(d => { if (d.url) imgUrls.push({ url: d.url, label: d.type || 'document' }); });
+                      const seen = new Set();
+                      return imgUrls.filter(i => { if (!i.url) return false; if (seen.has(i.url)) return false; seen.add(i.url); return true; }).map((img, idx) => (
+                        <img key={idx} src={img.url} alt={img.label} style={{ width: 140, height: 120, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }} onClick={() => setPreviewImage(img.url)} />
+                      ));
+                    })()}
                   </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-    </Box>
-  );
+                </Box>
+              </Box>
+            ) : null}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button variant="contained" color="success" onClick={async () => {
+              if (!selectedKyc) return;
+              const token = localStorage.getItem('adminToken');
+              const id = getActivityId(selectedKyc);
+              if (id) await handleApproveKYC(id);
+              else {
+                const userId = selectedKyc.userId || selectedKyc.user?.id || selectedKyc.userId;
+                if (userId) {
+                  setLoading(true);
+                  try { await userAPI.approveKYCByUser(userId, token); await refreshPendingKYC(token); setActionNotification({ open: true, type: 'success', message: 'KYC approved by user id.' }); } catch (e) { setActionNotification({ open: true, type: 'error', message: e.message || 'Failed to approve.' }); }
+                  setLoading(false);
+                }
+              }
+              setKycDialogOpen(false); setSelectedKyc(null);
+            }}>Approve</Button>
+            <Button variant="contained" color="error" onClick={async () => {
+              if (!selectedKyc) return;
+              const token = localStorage.getItem('adminToken');
+              const id = getActivityId(selectedKyc);
+              if (id) await handleRejectKYC(id);
+              else {
+                const userId = selectedKyc.userId || selectedKyc.user?.id || selectedKyc.userId;
+                if (userId) {
+                  setLoading(true);
+                  try { await userAPI.rejectKYCByUser(userId, token); await refreshPendingKYC(token); setActionNotification({ open: true, type: 'info', message: 'KYC rejected by user id.' }); } catch (e) { setActionNotification({ open: true, type: 'error', message: e.message || 'Failed to reject.' }); }
+                  setLoading(false);
+                }
+              }
+              setKycDialogOpen(false); setSelectedKyc(null);
+            }}>Reject</Button>
+            <Button onClick={() => { setKycDialogOpen(false); setSelectedKyc(null); }} variant="outlined">Close</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  };
 
   // Approve deposit
   const handleApproveDeposit = async (id) => {
