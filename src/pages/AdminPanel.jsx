@@ -293,7 +293,7 @@ export default function AdminPanel() {
               <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>{plan.name}</Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
+                  <Typography variant="body2" color="text.secondary">
                     Type: {plan.type}<br />
                     ROI: {plan.roi}%<br />
                     Min: ${plan.minAmount} - Max: ${plan.maxAmount}<br />
@@ -408,7 +408,7 @@ export default function AdminPanel() {
               <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>{signal.name}</Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
+                  <Typography variant="body2" color="text.secondary">
                     Price: ${signal.price}<br />
                     Accuracy: {signal.accuracy}<br />
                     Subscribers: {signal.subscribers}<br />
@@ -552,12 +552,12 @@ export default function AdminPanel() {
                       <Avatar sx={{ bgcolor: 'primary.main' }} />
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="h6" fontWeight={700} color="primary">{kyc.kycData?.firstName || kyc.username}</Typography>
-                        <Typography variant="caption" color="rgba(255,255,255,0.6)">User: {kyc.username} • {kyc.email}</Typography>
+                        <Typography variant="caption" color="text.secondary">User: {kyc.username} • {kyc.email}</Typography>
                       </Box>
                       <Chip label={kyc.kycStatus || 'pending'} color={kyc.kycStatus === 'verified' ? 'success' : kyc.kycStatus === 'pending' ? 'warning' : 'default'} />
                     </Box>
                     <Box sx={{ mt: 1 }}>
-                      <Typography variant="body2" color="rgba(255,255,255,0.8)">{kyc.kycData && Object.keys(kyc.kycData).length ? Object.entries(kyc.kycData).slice(0,3).map(([k, v]) => `${k}: ${v}`).join(' · ') : 'No detailed KYC fields submitted.'}</Typography>
+                      <Typography variant="body2" color="text.secondary">{kyc.kycData && Object.keys(kyc.kycData).length ? Object.entries(kyc.kycData).slice(0,3).map(([k, v]) => `${k}: ${v}`).join(' · ') : 'No detailed KYC fields submitted.'}</Typography>
                     </Box>
                     <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                       <Button variant="contained" color="primary" size="small" onClick={() => { setSelectedKyc(kyc); setKycDialogOpen(true); }}>View</Button>
@@ -578,16 +578,16 @@ export default function AdminPanel() {
                   <Avatar sx={{ bgcolor: 'primary.main' }} />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h5" color="primary" fontWeight={700}>{selectedKyc.username || selectedKyc.kycData?.firstName}</Typography>
-                    <Typography variant="caption" color="rgba(255,255,255,0.6)">User: {selectedKyc.username} • {selectedKyc.email}</Typography>
+                    <Typography variant="caption" color="text.secondary">User: {selectedKyc.username} • {selectedKyc.email}</Typography>
                   </Box>
                   <Chip label={selectedKyc.kycStatus || 'pending'} color={selectedKyc.kycStatus === 'verified' ? 'success' : 'warning'} />
                 </Box>
                 <Box>
                   {selectedKyc.kycData && Object.keys(selectedKyc.kycData).length > 0 ? (
                     Object.entries(selectedKyc.kycData).filter(([k, v]) => typeof v !== 'object').map(([key, val]) => (
-                      <Typography key={key} variant="body2" color="rgba(255,255,255,0.8)"><strong>{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, s => s.toUpperCase())}:</strong> {val || '-'}</Typography>
+                      <Typography key={key} variant="body2" color="text.secondary"><strong>{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, s => s.toUpperCase())}:</strong> {val || '-'}</Typography>
                     ))
-                  ) : <Typography variant="body2" color="rgba(255,255,255,0.8)">No detailed KYC fields submitted.</Typography>}
+                  ) : <Typography variant="body2" color="text.secondary">No detailed KYC fields submitted.</Typography>}
 
                   <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     {(() => {
@@ -776,12 +776,12 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {depositRequests.map(deposit => (
             <Grid item xs={12} md={6} lg={4} key={deposit.id}>
-              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
+              <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>
                     {deposit.username || deposit.userName || deposit.user?.name || 'User'}
                   </Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
+                  <Typography variant="body2" color="text.secondary">
                     Amount: ${deposit.amount}<br />
                     Method: {deposit.method}<br />
                     Status: <Chip label={deposit.status} color={deposit.status === 'approved' ? 'success' : deposit.status === 'pending' ? 'warning' : 'default'} size="small" />
@@ -917,7 +917,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {withdrawalRequests.map(withdrawal => (
             <Grid item xs={12} md={6} lg={4} key={withdrawal.id}>
-              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
+                <Card sx={{ bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>
                     {withdrawal.username || withdrawal.userName || withdrawal.user?.name || 'User'}
@@ -931,12 +931,12 @@ export default function AdminPanel() {
                   <Box sx={{ mt: 1 }}>
                     {withdrawal.method === 'bank' || withdrawal.withdrawalType === 'bank' ? (
                       <Box>
-                        <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Bank Name:</strong> {withdrawal.bankName || withdrawal.bank || '-'}</Typography>
-                        <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Account Name:</strong> {withdrawal.accountName || withdrawal.account_name || '-'}</Typography>
-                        <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Account Number:</strong> {withdrawal.accountNumber || withdrawal.account_number || '-'}</Typography>
+                        <Typography variant="body2" color="text.secondary"><strong>Bank Name:</strong> {withdrawal.bankName || withdrawal.bank || '-'}</Typography>
+                        <Typography variant="body2" color="text.secondary"><strong>Account Name:</strong> {withdrawal.accountName || withdrawal.account_name || '-'}</Typography>
+                        <Typography variant="body2" color="text.secondary"><strong>Account Number:</strong> {withdrawal.accountNumber || withdrawal.account_number || '-'}</Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="rgba(255,255,255,0.8)"><strong>Wallet Address:</strong> {withdrawal.walletAddress || withdrawal.wallet_address || '-'}</Typography>
+                      <Typography variant="body2" color="text.secondary"><strong>Wallet Address:</strong> {withdrawal.walletAddress || withdrawal.wallet_address || '-'}</Typography>
                     )}
                   </Box>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
@@ -975,8 +975,8 @@ export default function AdminPanel() {
                     <Avatar sx={{ bgcolor: 'primary.main' }}>{(u.username && u.username[0]) || (u.email && u.email[0]) || 'U'}</Avatar>
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="h6" fontWeight={700} color="primary">{u.username || u.name || u.email}</Typography>
-                      <Typography variant="caption" color="rgba(255,255,255,0.6)">ID: {u.id || u._id || u.userId || 'N/A'}</Typography>
-                      <Typography variant="body2" color="rgba(255,255,255,0.8)">{u.email}</Typography>
+                      <Typography variant="caption" color="text.secondary">ID: {u.id || u._id || u.userId || 'N/A'}</Typography>
+                      <Typography variant="body2" color="text.secondary">{u.email}</Typography>
                     </Box>
                     <Chip
                       label={`$${(typeof u.balance === 'number' ? Number(u.balance) : 0).toFixed(2)}`}
@@ -1178,18 +1178,18 @@ export default function AdminPanel() {
                   setActionNotification({ open: true, type: 'success', message: 'Dashboard refreshed.' });
                 } catch (e) { setActionNotification({ open: true, type: 'error', message: 'Refresh failed.' }); }
               }} sx={{ mr: 2 }}>Refresh</Button>
-              {lastUpdated ? <Typography variant="caption" color="rgba(255,255,255,0.6)">Last updated: {new Date(lastUpdated).toLocaleString()}</Typography> : null}
+              {lastUpdated ? <Typography variant="caption" color="text.secondary">Last updated: {new Date(lastUpdated).toLocaleString()}</Typography> : null}
             </Box>
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                  <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
+              <Card sx={{ p: 2, bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.totalUsers} color="primary">
                         <PeopleIcon fontSize="large" color="primary" />
                       </Badge>
                       <Box>
-                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Total Users</Typography>
+                        <Typography variant="caption" color="text.secondary">Total Users</Typography>
                         <Typography variant="h6" fontWeight={700}>{stats.totalUsers}</Typography>
                       </Box>
                     </Stack>
@@ -1204,7 +1204,7 @@ export default function AdminPanel() {
                         <PersonOffIcon fontSize="large" color="warning" />
                       </Badge>
                       <Box>
-                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Inactive Users</Typography>
+                        <Typography variant="caption" color="text.secondary">Inactive Users</Typography>
                         <Typography variant="h6" fontWeight={700}>{stats.inactiveUsers}</Typography>
                       </Box>
                     </Stack>
@@ -1219,7 +1219,7 @@ export default function AdminPanel() {
                         <VerifiedUserIcon fontSize="large" color="success" />
                       </Badge>
                       <Box>
-                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Verified KYC</Typography>
+                        <Typography variant="caption" color="text.secondary">Verified KYC</Typography>
                         <Typography variant="h6" fontWeight={700}>{stats.verifiedKyc}</Typography>
                       </Box>
                     </Stack>
@@ -1234,7 +1234,7 @@ export default function AdminPanel() {
                         <PaymentIcon fontSize="large" color="primary" />
                       </Badge>
                       <Box>
-                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Deposits</Typography>
+                        <Typography variant="caption" color="text.secondary">Deposits</Typography>
                         <Typography variant="h6" fontWeight={700}>{stats.deposits}</Typography>
                       </Box>
                     </Stack>
@@ -1242,14 +1242,14 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
+                <Card sx={{ p: 2, bgcolor: 'background.paper', color: 'text.primary', borderRadius: 2, boxShadow: 3 }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.withdrawals} color="error">
                         <AccountBalanceWalletIcon fontSize="large" color="error" />
                       </Badge>
                       <Box>
-                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Withdrawals</Typography>
+                        <Typography variant="caption" color="text.secondary">Withdrawals</Typography>
                         <Typography variant="h6" fontWeight={700}>{stats.withdrawals}</Typography>
                       </Box>
                     </Stack>
