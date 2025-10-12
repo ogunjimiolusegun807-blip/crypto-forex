@@ -220,6 +220,34 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  approveWithdrawal: async (activityId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/withdrawals/${activityId}/approve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  rejectWithdrawal: async (activityId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/withdrawals/${activityId}/reject`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  approveWithdrawalByUser: async (userId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/withdrawals/user/${userId}/approve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  rejectWithdrawalByUser: async (userId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/withdrawals/user/${userId}/reject`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
   adminGetAllUsers: async (token) => {
     const res = await fetch(`${BASE_URL}/api/admin/users`, {
       headers: { 'Authorization': `Bearer ${token}` }
