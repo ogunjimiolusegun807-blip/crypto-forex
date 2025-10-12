@@ -71,9 +71,18 @@ export default function AdminPanel() {
     }
     setLoading(true);
     try {
-      await userAPI.approveKYC(activityId, token);
+      const res = await userAPI.approveKYC(activityId, token);
       setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'verified' } : k)));
       setActionNotification({ open: true, type: 'success', message: 'KYC approved and user account activated.' });
+      if (res) {
+        const updated = {};
+        if (res.balance !== undefined) updated.balance = res.balance;
+        if (res.activity) updated.activity = res.activity;
+        if (Object.keys(updated).length) {
+          updated.id = res.userId || res.user?.id || activityId;
+          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        }
+      }
     } catch (err) {
       setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve KYC.' });
     }
@@ -87,9 +96,18 @@ export default function AdminPanel() {
     }
     setLoading(true);
     try {
-      await userAPI.rejectKYC(activityId, token);
+      const res = await userAPI.rejectKYC(activityId, token);
       setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'rejected' } : k)));
       setActionNotification({ open: true, type: 'info', message: 'KYC rejected. User notified.' });
+      if (res) {
+        const updated = {};
+        if (res.balance !== undefined) updated.balance = res.balance;
+        if (res.activity) updated.activity = res.activity;
+        if (Object.keys(updated).length) {
+          updated.id = res.userId || res.user?.id || activityId;
+          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        }
+      }
     } catch (err) {
       setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject KYC.' });
     }
@@ -351,11 +369,20 @@ export default function AdminPanel() {
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
-      await userAPI.approveDeposit(id, token);
+      const res = await userAPI.approveDeposit(id, token);
       setDepositRequests(prev => prev.map(d => d.id === id ? { ...d, status: 'approved' } : d));
       setActionNotification({ open: true, type: 'success', message: 'Deposit approved and user balance credited.' });
-    } catch {
-      setActionNotification({ open: true, type: 'error', message: 'Failed to approve deposit.' });
+      if (res) {
+        const updated = {};
+        if (res.balance !== undefined) updated.balance = res.balance;
+        if (res.activity) updated.activity = res.activity;
+        if (Object.keys(updated).length) {
+          updated.id = res.userId || res.user?.id || id;
+          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        }
+      }
+    } catch (err) {
+      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve deposit.' });
     }
     setLoading(false);
   };
@@ -365,11 +392,20 @@ export default function AdminPanel() {
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
-      await userAPI.approveWithdrawal(id, token);
+      const res = await userAPI.approveWithdrawal(id, token);
       setWithdrawalRequests(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' } : w));
       setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
-    } catch {
-      setActionNotification({ open: true, type: 'error', message: 'Failed to approve withdrawal.' });
+      if (res) {
+        const updated = {};
+        if (res.balance !== undefined) updated.balance = res.balance;
+        if (res.activity) updated.activity = res.activity;
+        if (Object.keys(updated).length) {
+          updated.id = res.userId || res.user?.id || id;
+          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        }
+      }
+    } catch (err) {
+      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve withdrawal.' });
     }
     setLoading(false);
   };
@@ -377,11 +413,20 @@ export default function AdminPanel() {
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
-      await userAPI.rejectWithdrawal(id, token);
+      const res = await userAPI.rejectWithdrawal(id, token);
       setWithdrawalRequests(prev => prev.map(w => w.id === id ? { ...w, status: 'rejected' } : w));
       setActionNotification({ open: true, type: 'info', message: 'Withdrawal rejected. User notified.' });
-    } catch {
-      setActionNotification({ open: true, type: 'error', message: 'Failed to reject withdrawal.' });
+      if (res) {
+        const updated = {};
+        if (res.balance !== undefined) updated.balance = res.balance;
+        if (res.activity) updated.activity = res.activity;
+        if (Object.keys(updated).length) {
+          updated.id = res.userId || res.user?.id || id;
+          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        }
+      }
+    } catch (err) {
+      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject withdrawal.' });
     }
     setLoading(false);
   };
@@ -442,19 +487,29 @@ export default function AdminPanel() {
                             onClick={async () => {
                               const token = localStorage.getItem('adminToken');
                               setLoading(true);
-                              try {
+                                try {
                                 const idToUse = deposit.id || deposit.activityId;
+                                let res;
                                 if (idToUse) {
-                                  await userAPI.rejectDeposit(idToUse, token);
+                                  res = await userAPI.rejectDeposit(idToUse, token);
                                   setDepositRequests(prev => prev.map(d => (d.id === idToUse || d.activityId === idToUse) ? { ...d, status: 'rejected' } : d));
                                 } else {
                                   // fallback: try reject by userId when activity id missing
                                   const userId = deposit.userId || deposit.user?.id || deposit.userId;
                                   if (!userId) throw new Error('No id available to reject deposit');
-                                  await userAPI.rejectDepositByUser(userId, token);
+                                  res = await userAPI.rejectDepositByUser(userId, token);
                                   setDepositRequests(prev => prev.map(d => (d.userId === userId ? { ...d, status: 'rejected' } : d)));
                                 }
                                 setActionNotification({ open: true, type: 'info', message: 'Deposit rejected.' });
+                                if (res) {
+                                  const updated = {};
+                                  if (res.balance !== undefined) updated.balance = res.balance;
+                                  if (res.activity) updated.activity = res.activity;
+                                  if (Object.keys(updated).length) {
+                                    updated.id = res.userId || res.user?.id || deposit.userId || deposit.user?.id || idToUse;
+                                    try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+                                  }
+                                }
                               } catch (err) {
                                 setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject deposit.' });
                               }
@@ -486,15 +541,25 @@ export default function AdminPanel() {
       if (Number.isNaN(amt) || amt <= 0) throw new Error('Invalid amount');
       // Use activity id if present, otherwise fallback to approve by userId
       const idToUse = creditingDeposit.id || creditingDeposit.activityId;
+      let res;
       if (idToUse) {
-        await userAPI.approveDepositWithAmount(idToUse, amt, token);
+        res = await userAPI.approveDepositWithAmount(idToUse, amt, token);
       } else {
         const userId = creditingDeposit.userId || creditingDeposit.user?.id;
         if (!userId) throw new Error('No user id available for fallback');
-        await userAPI.approveDepositByUser(userId, amt, token);
+        res = await userAPI.approveDepositByUser(userId, amt, token);
       }
       setDepositRequests(prev => prev.map(d => d.id === creditingDeposit.id ? { ...d, status: 'approved' } : d));
       setActionNotification({ open: true, type: 'success', message: 'Deposit credited and user balance updated.' });
+      if (res) {
+        const updated = {};
+        if (res.balance !== undefined) updated.balance = res.balance;
+        if (res.activity) updated.activity = res.activity;
+        if (Object.keys(updated).length) {
+          updated.id = res.userId || res.user?.id || (creditingDeposit.userId || creditingDeposit.user?.id) || idToUse;
+          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        }
+      }
       setCreditDialogOpen(false);
       setCreditingDeposit(null);
       setCreditAmount('');
@@ -674,10 +739,19 @@ export default function AdminPanel() {
           <Button onClick={async () => {
             const token = localStorage.getItem('adminToken');
             try {
-              await userAPI.adminManualCredit({ userId: selectedUserId, amount: Number(manualAmount), note: manualNote }, token);
+              const res = await userAPI.adminManualCredit({ userId: selectedUserId, amount: Number(manualAmount), note: manualNote }, token);
               setActionNotification({ open: true, type: 'success', message: 'User credited successfully.' });
               setManualCreditOpen(false);
               setSelectedUserId(''); setManualAmount(''); setManualNote('');
+              if (res) {
+                const updated = {};
+                if (res.balance !== undefined) updated.balance = res.balance;
+                if (res.activity) updated.activity = res.activity;
+                if (Object.keys(updated).length) {
+                  updated.id = res.userId || res.user?.id || selectedUserId;
+                  try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+                }
+              }
             } catch (err) {
               setActionNotification({ open: true, type: 'error', message: err.message || 'Manual credit failed.' });
             }

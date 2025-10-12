@@ -483,8 +483,18 @@ export default function Withdrawals() {
               setWithdrawalError(null);
               try {
                 const token = localStorage.getItem('authToken');
-                await userAPI.withdrawal({ amount: Number(amount), withdrawalType, bankName, accountName, accountNumber, walletAddress }, token);
+                const res = await userAPI.withdrawal({ amount: Number(amount), withdrawalType, bankName, accountName, accountNumber, walletAddress }, token);
                 setWithdrawalSuccess('Withdrawal request submitted successfully!');
+                // If backend returned an activity, dispatch it so AccountHistory shows it immediately
+                if (res) {
+                  const updated = {};
+                  if (res.balance !== undefined) updated.balance = res.balance;
+                  if (res.activity) updated.activity = res.activity;
+                  if (Object.keys(updated).length) {
+                    updated.id = res.userId || res.user?.id || (user && user.id);
+                    try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+                  }
+                }
                 setTimeout(() => {
                   setWithdrawalSuccess(null);
                   window.location.reload();

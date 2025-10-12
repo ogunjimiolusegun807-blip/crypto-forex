@@ -268,6 +268,7 @@ export default function SubscribeSignals() {
   const res = await userAPI.subscribeSignal(selectedPlan.id, token, selectedPlan.price);
       if (res && res.success) {
         const updated = { id: user.id, balance: res.balance };
+        if (res.activity) updated.activity = res.activity;
         try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       }
       setSnackbar({ open: true, message: `Successfully subscribed to ${selectedPlan.name}`, severity: 'success' });

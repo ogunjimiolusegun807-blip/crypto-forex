@@ -188,6 +188,7 @@ export default function BuyPlan() {
       // If backend returns new balance and activity, dispatch update to UserContext
       if (buyRes && buyRes.success) {
         const updated = { id: user.id, balance: buyRes.balance };
+        if (buyRes.activity) updated.activity = buyRes.activity;
         try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       }
       setSnackbar({ open: true, message: `Successfully purchased ${selectedPlan.name}`, severity: 'success' });

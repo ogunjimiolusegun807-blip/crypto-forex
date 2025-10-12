@@ -43,7 +43,34 @@ export const UserProvider = ({ children }) => {
         if (updated && updated.id) {
           setUser(prev => {
             if (!prev || prev.id !== updated.id) return prev;
-            const merged = { ...prev, ...updated };
+            // Merge top-level fields (like balance)
+            let merged = { ...prev, ...updated };
+            // If an activity object is provided, prepend it into transactions array
+            if (updated.activity) {
+              let activity = updated.activity;
+              // Normalize minimal fields for frontend display
+              try {
+                activity = { ...activity };
+                if (!activity.date) activity.date = new Date().toISOString();
+                // If time not provided, create from date
+                if (!activity.time) activity.time = new Date(activity.date).toLocaleTimeString();
+                if (activity.amount !== undefined) activity.amount = Number(activity.amount);
+                if (!activity.status) activity.status = activity.approved ? 'completed' : 'pending';
+                if (!activity.description) activity.description = activity.type ? activity.type.replace(/_/g, ' ').toUpperCase() : 'Activity';
+              } catch (e) { /* ignore normalization errors */ }
+              // Normalize existing transactions array on user
+              const existing = Array.isArray(prev.transactions)
+                ? prev.transactions.slice()
+                : Array.isArray(prev.activities)
+                  ? prev.activities.slice()
+                  : [];
+              // Avoid duplicate activity ids
+              const exists = existing.find(a => a.id === activity.id);
+              if (!exists) {
+                existing.unshift(activity);
+              }
+              merged = { ...merged, transactions: existing };
+            }
             localStorage.setItem('user', JSON.stringify(merged));
             return merged;
           });
@@ -75,9 +102,17 @@ export const UserProvider = ({ children }) => {
       }
       const profileResponse = await userAPI.getProfile(token);
       if (profileResponse && profileResponse.username) {
-        setUser(profileResponse);
+        // Ensure transactions array is present for AccountHistory UI
+        const userObj = { ...profileResponse };
+        if (!Array.isArray(userObj.transactions) && Array.isArray(userObj.activities)) {
+          userObj.transactions = userObj.activities.slice().reverse(); // most recent first
+        }
+        if (!Array.isArray(userObj.transactions)) {
+          userObj.transactions = [];
+        }
+        setUser(userObj);
         setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(profileResponse));
+        localStorage.setItem('user', JSON.stringify(userObj));
       } else {
         setUser(null);
         setIsAuthenticated(false);

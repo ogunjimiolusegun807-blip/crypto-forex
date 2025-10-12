@@ -223,11 +223,21 @@ export default function VerifyAccount() {
       formDataToSend.append('selfiePhoto', uploadedFiles.selfiePhoto);
     }
     userAPI.submitKYC(formDataToSend, token)
-      .then(() => {
+      .then((res) => {
         setLoading(false);
         setSubmitDialog(false);
         // Show styled notification instead of alert
         setNotification({ open: true, type: 'success', message: 'KYC verification submitted successfully! We will review your documents and update your account status within 24-48 hours.' });
+        // If backend returned activity/balance, dispatch update to UserContext
+        if (res) {
+          const updated = {};
+          if (res.balance !== undefined) updated.balance = res.balance;
+          if (res.activity) updated.activity = res.activity;
+          if (Object.keys(updated).length) {
+            updated.id = res.userId || res.user?.id || (user && user.id);
+            try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+          }
+        }
         setTimeout(() => window.location.reload(), 2000);
       })
       .catch((err) => {

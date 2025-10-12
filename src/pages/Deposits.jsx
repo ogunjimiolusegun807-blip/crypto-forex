@@ -109,12 +109,30 @@ export default function Deposits() {
       if (proof) {
         formData.append('proof', proof);
       }
-      await userAPI.deposit(formData, token);
+      const res = await userAPI.deposit(formData, token);
+      // If backend returned activity/balance, dispatch to UserContext so AccountHistory updates live.
+      if (res) {
+        const detail = { id: user?.id };
+        if (res.balance !== undefined) detail.balance = res.balance;
+        if (res.activity) {
+          detail.activity = res.activity;
+        } else {
+          // Fallback: create a local pending activity so the user sees the deposit immediately
+          detail.activity = {
+            id: `local-deposit-${Date.now()}`,
+            type: 'deposit',
+            amount: Number(amount),
+            status: 'pending',
+            description: `Deposit of ${amount} submitted`,
+            createdAt: new Date().toISOString(),
+          };
+        }
+        window.dispatchEvent(new CustomEvent('user-updated', { detail }));
+      }
       setDepositSuccess('Deposit submitted successfully!');
       setTimeout(() => {
         setDepositSuccess(null);
         handleCloseModal();
-        window.location.reload();
       }, 2000);
     } catch (err) {
       setDepositError(err.message || 'Deposit failed');
