@@ -193,13 +193,23 @@ export default function BuyPlan() {
         setSnackbar({ open: true, message: 'Enter a valid investment amount.', severity: 'error' });
         return;
       }
+      // Validate against plan min/max if present on selectedPlan
+      if (selectedPlan && selectedPlan.minAmount && Number(amount) < Number(selectedPlan.minAmount)) {
+        setSnackbar({ open: true, message: `Minimum amount for this plan is ${selectedPlan.minAmount}.`, severity: 'error' });
+        return;
+      }
+      if (selectedPlan && selectedPlan.maxAmount && Number(amount) > Number(selectedPlan.maxAmount)) {
+        setSnackbar({ open: true, message: `Maximum amount for this plan is ${selectedPlan.maxAmount}.`, severity: 'error' });
+        return;
+      }
+
       if (balance < amount) {
         setSnackbar({ open: true, message: `Insufficient balance. Please deposit $${(amount - balance).toFixed(2)} and try again.`, severity: 'error' });
         return;
       }
       setConfirming(true);
       const token = localStorage.getItem('authToken');
-      const buyRes = await userAPI.buyPlan(selectedPlan.id, investAmount, token);
+      const buyRes = await userAPI.buyPlan(selectedPlan.id, amount, token);
       // If backend returns new balance and activity, dispatch update to UserContext
       if (buyRes && buyRes.success) {
         const updated = { id: user.id, balance: buyRes.balance };

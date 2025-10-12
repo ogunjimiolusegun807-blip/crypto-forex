@@ -291,13 +291,14 @@ export const userAPI = {
     return await handleResponse(res);
   },
   buyPlan: async (planId, amount, token) => {
+    // Ensure amount is sent as a number to backend
     const res = await fetch(`${BASE_URL}/api/user/plan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ planId, amount })
+      body: JSON.stringify({ planId, amount: Number(amount) })
     });
     return await handleResponse(res);
   },
