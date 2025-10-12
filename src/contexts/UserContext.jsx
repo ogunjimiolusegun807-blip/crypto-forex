@@ -35,6 +35,16 @@ export const UserProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
+  // Listen for explicit auth changes (register/login), reload profile
+  useEffect(() => {
+    const onAuthChanged = () => {
+      setIsAuthenticated(!!localStorage.getItem('authToken'));
+      loadUserData();
+    };
+    window.addEventListener('auth-changed', onAuthChanged);
+    return () => window.removeEventListener('auth-changed', onAuthChanged);
+  }, []);
+
   // Listen for external updates (e.g., admin panel dispatching a 'user-updated' event)
   useEffect(() => {
     const handler = (e) => {

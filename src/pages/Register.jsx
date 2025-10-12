@@ -54,6 +54,8 @@ function Register() {
       if (res && res.token) {
         localStorage.setItem('authToken', res.token);
         localStorage.setItem('user', JSON.stringify(res.user || {}));
+        // notify app that auth state changed so UserProvider can load fresh profile
+        try { window.dispatchEvent(new Event('auth-changed')); } catch (e) {}
         setSuccess('Registration successful — redirecting...');
         setTimeout(() => navigate('/dashboard'), 1100);
       } else {
