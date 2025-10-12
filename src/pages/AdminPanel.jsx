@@ -731,7 +731,10 @@ export default function AdminPanel() {
                       <Typography variant="caption" color="rgba(255,255,255,0.6)">ID: {u.id || u._id || u.userId || 'N/A'}</Typography>
                       <Typography variant="body2" color="rgba(255,255,255,0.8)">{u.email}</Typography>
                     </Box>
-                    <Chip label={typeof u.balance === 'number' ? `$${u.balance}` : 'No balance'} color="info" />
+                    <Chip
+                      label={`$${(typeof u.balance === 'number' ? Number(u.balance) : 0).toFixed(2)}`}
+                      color={typeof u.balance === 'number' && Number(u.balance) > 0 ? 'success' : 'info'}
+                    />
                   </Box>
                   <Box sx={{ mt: 2 }}>
                     <Stack direction="row" spacing={2}>
