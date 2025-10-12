@@ -226,6 +226,14 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  adminManualCredit: async ({ userId, amount, note }, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/credit-user`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ userId, amount, note })
+    });
+    return await handleResponse(res);
+  },
   buyPlan: async (planId, amount, token) => {
     const res = await fetch(`${BASE_URL}/api/user/plan`, {
       method: 'POST',

@@ -98,6 +98,12 @@ export default function AdminPanel() {
 
   // Settings state
   const [adminCreds, setAdminCreds] = useState({ email: 'Eloninprivateinvestment@outlook.com', password: '' });
+  // Manual credit state
+  const [manualCreditOpen, setManualCreditOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [manualAmount, setManualAmount] = useState('');
+  const [manualNote, setManualNote] = useState('');
   // Plans tab
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(false);
@@ -120,6 +126,11 @@ export default function AdminPanel() {
         .then(setSignals)
         .catch(() => setActionNotification({ open: true, type: 'error', message: 'Failed to fetch signals.' }))
         .finally(() => setSignalsLoading(false));
+    }
+    // fetch users for manual credit when admin opens deposits tab (or you can move this to settings)
+    if (tab === 1) {
+      const token = localStorage.getItem('adminToken');
+      userAPI.adminGetAllUsers(token).then(setAllUsers).catch(() => {});
     }
   }, [tab]);
 
@@ -626,6 +637,32 @@ export default function AdminPanel() {
   {tab === 4 && renderSignals()}
   {tab === 5 && renderUsers()}
   {tab === 6 && renderSettings()}
+      {/* Manual Credit Dialog */}
+      <Dialog open={manualCreditOpen} onClose={() => setManualCreditOpen(false)} maxWidth="sm" fullWidth>
+        <DialogContent>
+          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Manual Credit User</Typography>
+          <TextField select fullWidth label="Select User" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} sx={{ mb: 2 }} SelectProps={{ native: true }}>
+            <option value="">Select user</option>
+            {allUsers.map(u => <option key={u.id} value={u.id}>{u.username} — {u.email}</option>)}
+          </TextField>
+          <TextField label="Amount" fullWidth value={manualAmount} onChange={e => setManualAmount(e.target.value)} sx={{ mb: 2 }} />
+          <TextField label="Note (optional)" fullWidth value={manualNote} onChange={e => setManualNote(e.target.value)} sx={{ mb: 2 }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setManualCreditOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={async () => {
+            const token = localStorage.getItem('adminToken');
+            try {
+              await userAPI.adminManualCredit({ userId: selectedUserId, amount: Number(manualAmount), note: manualNote }, token);
+              setActionNotification({ open: true, type: 'success', message: 'User credited successfully.' });
+              setManualCreditOpen(false);
+              setSelectedUserId(''); setManualAmount(''); setManualNote('');
+            } catch (err) {
+              setActionNotification({ open: true, type: 'error', message: err.message || 'Manual credit failed.' });
+            }
+          }} variant="contained" color="primary">Credit</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
