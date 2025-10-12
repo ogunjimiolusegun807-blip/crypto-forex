@@ -144,6 +144,21 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  // Fallback endpoints by user id
+  approveKYCByUser: async (userId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/kyc/user/${userId}/approve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  rejectKYCByUser: async (userId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/kyc/user/${userId}/reject`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
   adminGetAllPlans: async (token) => {
     const res = await fetch(`${BASE_URL}/api/admin/plans`, {
       headers: { 'Authorization': `Bearer ${token}` }

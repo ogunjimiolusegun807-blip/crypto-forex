@@ -60,12 +60,13 @@ export default function AdminPanel() {
 
   // Approve/reject KYC
   const handleApproveKYC = async (activityId) => {
+    const token = localStorage.getItem('adminToken');
+    // If activityId is missing, try to interpret it as a userId fallback
     if (!activityId) {
-      setActionNotification({ open: true, type: 'error', message: 'Missing activity id for approval.' });
+      setActionNotification({ open: true, type: 'info', message: 'No activity id found — attempting approve by user id.' });
       return;
     }
     setLoading(true);
-    const token = localStorage.getItem('adminToken');
     try {
       await userAPI.approveKYC(activityId, token);
       setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'verified' } : k)));
@@ -76,12 +77,12 @@ export default function AdminPanel() {
     setLoading(false);
   };
   const handleRejectKYC = async (activityId) => {
+    const token = localStorage.getItem('adminToken');
     if (!activityId) {
-      setActionNotification({ open: true, type: 'error', message: 'Missing activity id for rejection.' });
+      setActionNotification({ open: true, type: 'info', message: 'No activity id found — attempting reject by user id.' });
       return;
     }
     setLoading(true);
-    const token = localStorage.getItem('adminToken');
     try {
       await userAPI.rejectKYC(activityId, token);
       setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'rejected' } : k)));
@@ -263,12 +264,58 @@ export default function AdminPanel() {
                     {
                       (() => {
                         const id = getActivityId(kyc);
+                        const userId = kyc.userId || kyc.userId || kyc.user?.id || kyc.userId;
+                        const canApprove = (!id && userId) || id;
                         return (
                           <>
-                            <Button variant="contained" color="success" disabled={!id || kyc.kycStatus === 'verified' || loading} onClick={() => handleApproveKYC(id)}>
+                            <Button
+                              variant="contained"
+                              color="success"
+                              disabled={!canApprove || kyc.kycStatus === 'verified' || loading}
+                              onClick={async () => {
+                                const token = localStorage.getItem('adminToken');
+                                if (id) {
+                                  await handleApproveKYC(id);
+                                  return;
+                                }
+                                if (userId) {
+                                  setLoading(true);
+                                  try {
+                                    await userAPI.approveKYCByUser(userId, token);
+                                    setKycRequests(prev => prev.map(k => (k.userId === userId ? { ...k, kycStatus: 'verified' } : k)));
+                                    setActionNotification({ open: true, type: 'success', message: 'KYC approved by user id.' });
+                                  } catch (err) {
+                                    setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve by user.' });
+                                  }
+                                  setLoading(false);
+                                }
+                              }}
+                            >
                               {loading ? 'Approving...' : 'Approve'}
                             </Button>
-                            <Button variant="contained" color="error" disabled={!id || kyc.kycStatus === 'rejected' || loading} onClick={() => handleRejectKYC(id)}>
+                            <Button
+                              variant="contained"
+                              color="error"
+                              disabled={!canApprove || kyc.kycStatus === 'rejected' || loading}
+                              onClick={async () => {
+                                const token = localStorage.getItem('adminToken');
+                                if (id) {
+                                  await handleRejectKYC(id);
+                                  return;
+                                }
+                                if (userId) {
+                                  setLoading(true);
+                                  try {
+                                    await userAPI.rejectKYCByUser(userId, token);
+                                    setKycRequests(prev => prev.map(k => (k.userId === userId ? { ...k, kycStatus: 'rejected' } : k)));
+                                    setActionNotification({ open: true, type: 'info', message: 'KYC rejected by user id.' });
+                                  } catch (err) {
+                                    setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject by user.' });
+                                  }
+                                  setLoading(false);
+                                }
+                              }}
+                            >
                               {loading ? 'Rejecting...' : 'Reject'}
                             </Button>
                           </>
