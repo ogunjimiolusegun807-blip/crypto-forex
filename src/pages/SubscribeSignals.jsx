@@ -265,7 +265,7 @@ export default function SubscribeSignals() {
       }
       setConfirming(true);
       const token = localStorage.getItem('authToken');
-      const res = await userAPI.subscribeSignal(selectedPlan.id, token);
+  const res = await userAPI.subscribeSignal(selectedPlan.id, token, selectedPlan.price);
       if (res && res.success) {
         const updated = { id: user.id, balance: res.balance };
         try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}

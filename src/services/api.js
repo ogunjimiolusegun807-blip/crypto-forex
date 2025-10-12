@@ -251,14 +251,16 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
-  subscribeSignal: async (signalId, token) => {
+  subscribeSignal: async (signalId, token, price) => {
+    const body = { signalId };
+    if (price) body.price = price;
     const res = await fetch(`${BASE_URL}/api/user/signal/subscribe`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ signalId })
+      body: JSON.stringify(body)
     });
     return await handleResponse(res);
   },
