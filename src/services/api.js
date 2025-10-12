@@ -1,21 +1,10 @@
+// Keep a small admin helper for auth-related admin calls (login/change-password live under /api/auth/admin)
 export const adminAPI = {
   adminLogin: async ({ email, password }) => {
     const res = await fetch(`${BASE_URL}/api/auth/admin/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
-    });
-    return await handleResponse(res);
-  },
-  adminGetAllPlans: async (token) => {
-    const res = await fetch(`${BASE_URL}/api/admin/plans`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    return await handleResponse(res);
-  },
-  adminGetAllSignals: async (token) => {
-    const res = await fetch(`${BASE_URL}/api/admin/signals`, {
-      headers: { 'Authorization': `Bearer ${token}` }
     });
     return await handleResponse(res);
   }
@@ -130,6 +119,18 @@ export const userAPI = {
   // ADMIN ENDPOINTS
   adminGetAllKYC: async (token) => {
     const res = await fetch(`${BASE_URL}/api/admin/kyc`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  adminGetAllPlans: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/plans`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  adminGetAllSignals: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/signals`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     return await handleResponse(res);
