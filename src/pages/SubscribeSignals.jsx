@@ -232,6 +232,8 @@ export default function SubscribeSignals() {
   const [subscribeDialog, setSubscribeDialog] = useState(false);
   // Use real balance from user context
   const accountBalance = Number(user?.balance || 0);
+  const [confirming, setConfirming] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
   const [signalsHistory, setSignalsHistory] = useState([]);
   const [notification, setNotification] = useState({ open: false, type: '', message: '' });
@@ -257,20 +259,27 @@ export default function SubscribeSignals() {
     try {
       // Check balance before subscribing
       if (accountBalance < selectedPlan.price) {
-        setNotification({ open: true, type: 'error', message: `Insufficient balance. Please deposit $${(selectedPlan.price - accountBalance).toFixed(2)} and try again.` });
+        setSnackbar({ open: true, message: `Insufficient balance. Please deposit $${(selectedPlan.price - accountBalance).toFixed(2)} and try again.`, severity: 'error' });
         return;
       }
+      setConfirming(true);
       const token = localStorage.getItem('authToken');
-      await userAPI.subscribeSignal(selectedPlan.id, token);
-      setNotification({ open: true, type: 'success', message: `Successfully subscribed to ${selectedPlan.name}` });
+      const res = await userAPI.subscribeSignal(selectedPlan.id, token);
+      if (res && res.success) {
+        const updated = { id: user.id, balance: res.balance };
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+      }
+      setSnackbar({ open: true, message: `Successfully subscribed to ${selectedPlan.name}`, severity: 'success' });
       setSubscribeDialog(false);
       // Refresh signals history
-      const res = await userAPI.getSignals(token);
-      setSignalsHistory(res.signals || []);
+      const signalsRes = await userAPI.getSignals(token);
+      setSignalsHistory(signalsRes.signals || []);
       // Deduct price from dashboard balance
       try { await refreshStats(); } catch (e) { if (window.location.pathname.includes('dashboard')) { window.location.reload(); } }
+      setConfirming(false);
     } catch (err) {
-      setNotification({ open: true, type: 'error', message: err.message || 'Signal subscription failed.' });
+      setSnackbar({ open: true, message: err.message || 'Signal subscription failed.', severity: 'error' });
+      setConfirming(false);
     }
   };
       {/* Notification Alert */}
@@ -711,13 +720,23 @@ export default function SubscribeSignals() {
             onClick={handleConfirmSubscribe}
             variant="contained"
             color="primary"
-            disabled={accountBalance < (selectedPlan?.price || 0)}
+            disabled={accountBalance < (selectedPlan?.price || 0) || confirming}
             autoFocus
           >
-            Confirm Subscription
+            {confirming ? 'Processing...' : 'Confirm Subscription'}
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

@@ -129,6 +129,8 @@ export default function BuyPlan() {
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
   const [plansHistory, setPlansHistory] = useState([]);
   const [notification, setNotification] = useState({ open: false, type: '', message: '' });
+  const [confirming, setConfirming] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   // Fetch user's plan history from backend
   useEffect(() => {
     const fetchPlans = async () => {
@@ -172,26 +174,34 @@ export default function BuyPlan() {
       const balance = Number(user?.balance || 0);
       const amount = Number(investAmount || 0);
       if (amount <= 0) {
-        setNotification({ open: true, type: 'error', message: 'Enter a valid investment amount.' });
+        setSnackbar({ open: true, message: 'Enter a valid investment amount.', severity: 'error' });
         return;
       }
       if (balance < amount) {
-        setNotification({ open: true, type: 'error', message: `Insufficient balance. Please deposit $${(amount - balance).toFixed(2)} and try again.` });
+        setSnackbar({ open: true, message: `Insufficient balance. Please deposit $${(amount - balance).toFixed(2)} and try again.`, severity: 'error' });
         return;
       }
+      setConfirming(true);
       const token = localStorage.getItem('authToken');
-      await userAPI.buyPlan(selectedPlan.id, investAmount, token);
-      setNotification({ open: true, type: 'success', message: `Successfully purchased ${selectedPlan.name}` });
+      const buyRes = await userAPI.buyPlan(selectedPlan.id, investAmount, token);
+      // If backend returns new balance and activity, dispatch update to UserContext
+      if (buyRes && buyRes.success) {
+        const updated = { id: user.id, balance: buyRes.balance };
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+      }
+      setSnackbar({ open: true, message: `Successfully purchased ${selectedPlan.name}`, severity: 'success' });
       setInvestDialogOpen(false);
       setInvestAmount('');
       setPaymentMethod('');
       // Refresh plans history
-      const res = await userAPI.getPlans(token);
-      setPlansHistory(res.plans || []);
+      const plansRes = await userAPI.getPlans(token);
+      setPlansHistory(plansRes.plans || []);
       // Refresh user balance/profile
       try { await refreshStats(); } catch (e) { /* ignore refresh errors */ }
+      setConfirming(false);
     } catch (err) {
-      setNotification({ open: true, type: 'error', message: err.message || 'Plan purchase failed.' });
+      setSnackbar({ open: true, message: err.message || 'Plan purchase failed.', severity: 'error' });
+      setConfirming(false);
     }
   };
       {/* Notification Alert */}
@@ -592,13 +602,23 @@ export default function BuyPlan() {
             <Button
               onClick={handleConfirmInvestment}
               variant="contained"
-              disabled={!investAmount}
+              disabled={!investAmount || confirming}
               sx={{ fontWeight: 700 }}
             >
-              Confirm Investment
+              {confirming ? 'Processing...' : 'Confirm Investment'}
             </Button>
           </DialogActions>
         </Dialog>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
 
       {/* Footer */}
