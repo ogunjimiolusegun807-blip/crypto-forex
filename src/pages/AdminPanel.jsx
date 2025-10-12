@@ -132,6 +132,8 @@ export default function AdminPanel() {
   // Signals tab
   const [signals, setSignals] = useState([]);
   const [signalsLoading, setSignalsLoading] = useState(false);
+  // Users tab
+  const [usersLoading, setUsersLoading] = useState(false);
 
   useEffect(() => {
     if (tab === 3) {
@@ -153,6 +155,17 @@ export default function AdminPanel() {
     if (tab === 1) {
       const token = localStorage.getItem('adminToken');
       userAPI.adminGetAllUsers(token).then(setAllUsers).catch(() => {});
+    }
+
+    // fetch all users when admin opens the Users tab
+    if (tab === 5) {
+      const token = localStorage.getItem('adminToken');
+      if (!token) return;
+      setUsersLoading(true);
+      userAPI.adminGetAllUsers(token)
+        .then((data) => setAllUsers(data || []))
+        .catch(() => setActionNotification({ open: true, type: 'error', message: 'Failed to fetch users.' }))
+        .finally(() => setUsersLoading(false));
     }
   }, [tab]);
 
@@ -687,8 +700,37 @@ export default function AdminPanel() {
   const renderUsers = () => (
     <Box>
       <Typography variant="h5" color="primary" fontWeight={700} gutterBottom>User Management</Typography>
-      {/* List users here */}
-      <Alert severity="info">No users found.</Alert>
+      {usersLoading ? (
+        <Alert severity="info">Loading users...</Alert>
+      ) : (allUsers && allUsers.length > 0) ? (
+        <Grid container spacing={3}>
+          {allUsers.map(u => (
+            <Grid item xs={12} md={6} lg={4} key={u.id || u._id || u.userId || u.email}>
+              <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>{(u.username && u.username[0]) || (u.email && u.email[0]) || 'U'}</Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" fontWeight={700} color="primary">{u.username || u.name || u.email}</Typography>
+                      <Typography variant="caption" color="rgba(255,255,255,0.6)">ID: {u.id || u._id || u.userId || 'N/A'}</Typography>
+                      <Typography variant="body2" color="rgba(255,255,255,0.8)">{u.email}</Typography>
+                    </Box>
+                    <Chip label={typeof u.balance === 'number' ? `$${u.balance}` : 'No balance'} color="info" />
+                  </Box>
+                  <Box sx={{ mt: 2 }}>
+                    <Stack direction="row" spacing={2}>
+                      <Button size="small" variant="contained" color="primary" onClick={() => { navigator.clipboard?.writeText(u.email || ''); setActionNotification({ open: true, type: 'info', message: 'Email copied to clipboard.' }); }}>Copy Email</Button>
+                      <Button size="small" variant="outlined" color="success" onClick={() => { setManualCreditOpen(true); setSelectedUserId(u.id || u._id || u.userId); }}>Credit</Button>
+                    </Stack>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Alert severity="info">No users found.</Alert>
+      )}
     </Box>
   );
 
