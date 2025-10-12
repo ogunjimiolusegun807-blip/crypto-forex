@@ -23,7 +23,6 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import EmailIcon from '@mui/icons-material/Email';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useTheme } from '@mui/material/styles';
-import CryptoTicker from '../components/CryptoTicker';
 import { useUser } from '../contexts/UserContext';
 import { userAPI } from '../services/api';
 
@@ -294,17 +293,6 @@ export default function Deposits() {
       </Box>
 
       {/* Ticker Bar */}
-      <Box sx={{ mb: 2 }}>
-        <CryptoTicker
-          interval={8000}
-          symbols={[
-            { id: 'bitcoin', label: 'BTC/USD', pair: 'usd' },
-            { id: 'ethereum', label: 'ETH/USD', pair: 'usd' },
-            { id: 'litecoin', label: 'LTC/USD', pair: 'usd' },
-            { source: 'fiat', base: 'USD', symbol: 'EUR', label: 'EUR/USD' }
-          ]}
-        />
-      </Box>
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
