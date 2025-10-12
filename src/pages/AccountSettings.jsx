@@ -181,10 +181,35 @@ export default function AccountSettings() {
     }
   };
 
-  const handleSaveProfile = () => {
-    // Handle profile save logic
-    setIsEditing(false);
-    console.log('Profile saved:', formData);
+  const handleSaveProfile = async () => {
+    // Save profile to backend and update context/localStorage so UI reflects changes
+    try {
+      const token = localStorage.getItem('authToken');
+      const payload = {
+        fullName: formData.fullName,
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+        country: formData.country,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        address: formData.address,
+      };
+      const res = await userAPI.updateProfile(payload, token);
+      if (res && (res.user || res.data)) {
+        // Normalize the returned user object
+        const updatedUser = res.user || (res.data && res.data.user) || res;
+        try { localStorage.setItem('user', JSON.stringify(updatedUser)); } catch (e) {}
+        // If the global UserContext exposes a refresh or update function, attempt to call it
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedUser })); } catch (e) {}
+        setNotification({ open: true, type: 'success', message: 'Profile updated successfully.' });
+      } else {
+        setNotification({ open: true, type: 'error', message: res.error || 'Failed to update profile.' });
+      }
+      setIsEditing(false);
+    } catch (err) {
+      setNotification({ open: true, type: 'error', message: err.message || 'Failed to update profile.' });
+    }
   };
 
   const handlePasswordChange = () => {

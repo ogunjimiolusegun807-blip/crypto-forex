@@ -33,10 +33,12 @@ async function handleResponse(res) {
 
 export const userAPI = {
   register: async ({ username, email, password }) => {
+    // Accept a generic payload object so callers can provide extended profile fields
+    const payload = arguments[0] || { username, email, password };
     const res = await fetch(`${BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password })
+      body: JSON.stringify(payload)
     });
     return await handleResponse(res);
   },
@@ -369,6 +371,19 @@ export const userAPI = {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ settings })
+    });
+    return await handleResponse(res);
+  },
+  // Update user profile (front-end will call with profile object). token optional - will fallback to localStorage.
+  updateProfile: async (profile, token) => {
+    const auth = token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
+    const res = await fetch(`${BASE_URL}/api/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { 'Authorization': `Bearer ${auth}` } : {})
+      },
+      body: JSON.stringify(profile)
     });
     return await handleResponse(res);
   },
