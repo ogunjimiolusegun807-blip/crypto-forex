@@ -138,6 +138,21 @@ export default function AdminPanel() {
     }
   };
 
+  // refresh pending withdrawals list from backend (authoritative)
+  const refreshPendingWithdrawals = async (token) => {
+    try {
+      const data = await userAPI.adminGetAllWithdrawals(token);
+      // keep only non-final states (pending/unhandled)
+      const filtered = (data || []).filter(w => {
+        const status = (w?.status || w?.state || (w.activity && w.activity.status) || '').toString().toLowerCase();
+        return !['approved', 'rejected', 'completed'].includes(status);
+      });
+      setWithdrawalRequests(filtered);
+    } catch (e) {
+      setActionNotification({ open: true, type: 'error', message: 'Failed to refresh withdrawals list.' });
+    }
+  };
+
   // Approve/reject KYC
   const handleApproveKYC = async (activityId) => {
     const token = localStorage.getItem('adminToken');
@@ -705,7 +720,9 @@ export default function AdminPanel() {
       }
       // remove approved withdrawal(s) from admin list using multiple possible id fields
       const idToRemove = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
-      setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
+  setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
+  // refresh authoritative list from server so items removed server-side don't reappear after page reload
+  try { await refreshPendingWithdrawals(token); } catch (e) {}
       setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
       // Dispatch user-updated from server response when available
       if (res && (res.balance !== undefined || res.activity)) {
@@ -763,7 +780,9 @@ export default function AdminPanel() {
         }
       }
       const idToRemove = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
-      setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
+  setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
+  // refresh authoritative list from server so items removed server-side don't reappear after page reload
+  try { await refreshPendingWithdrawals(token); } catch (e) {}
       setActionNotification({ open: true, type: 'info', message: 'Withdrawal rejected. User notified.' });
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
