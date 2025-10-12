@@ -103,7 +103,8 @@ export default function CryptoTicker({ symbols = [], interval = 8000 }) {
 
   // marquee effect: duplicate items to create continuous scroll
   // animation duration scales with number of items to keep speed reasonable
-  const duration = Math.max(12, Math.min(60, Math.floor((items.length || 4) * 6))); // 6s per 1 item roughly
+  // make it faster for compact layout
+  const duration = Math.max(8, Math.min(40, Math.floor((items.length || 4) * 4)));
 
   return (
     <Box
@@ -115,9 +116,9 @@ export default function CryptoTicker({ symbols = [], interval = 8000 }) {
         overflow: 'hidden',
         bgcolor: '#181A20',
         borderRadius: 2,
-        px: 1,
-        py: { xs: 0.5, sm: 0.75 },
-        height: { xs: 40, sm: 46, md: 54 },
+        px: { xs: 0.5, sm: 1 },
+        py: { xs: 0.25, sm: 0.5 },
+        height: { xs: 28, sm: 34, md: 38 },
         display: 'flex',
         alignItems: 'center'
       }}
@@ -126,7 +127,7 @@ export default function CryptoTicker({ symbols = [], interval = 8000 }) {
         <Box
           sx={{
             display: 'flex',
-            gap: { xs: 2, sm: 3 },
+            gap: { xs: 1, sm: 1.5 },
             alignItems: 'center',
             whiteSpace: 'nowrap',
             // create a long horizontal strip and translate it left by 50% (we duplicate items)
@@ -135,14 +136,14 @@ export default function CryptoTicker({ symbols = [], interval = 8000 }) {
           }}
         >
           {items.concat(items).map((it, idx) => (
-            <Box key={`${it.key}_${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 2, flexShrink: 0 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, minWidth: { xs: 70, sm: 90 }, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+            <Box key={`${it.key}_${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: { xs: 1, sm: 1.5 }, flexShrink: 0 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, minWidth: { xs: 50, sm: 70 }, fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
                 {it.label}
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800, color: '#fff', minWidth: { xs: 60, sm: 80 }, fontSize: { xs: '0.7rem', sm: '0.85rem' } }}>
+              <Typography variant="body2" sx={{ fontWeight: 800, color: '#fff', minWidth: { xs: 50, sm: 70 }, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                 {it.price}
               </Typography>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: (it.rawChange || 0) >= 0 ? theme.palette.success.main : theme.palette.error.main, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: (it.rawChange || 0) >= 0 ? theme.palette.success.main : theme.palette.error.main, fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
                 {it.change}
               </Typography>
             </Box>
