@@ -72,7 +72,7 @@ function Register() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
       <Card sx={{ maxWidth: 1100, width: '100%', borderRadius: 3, boxShadow: 6, overflow: 'hidden' }}>
         <Box sx={{ width: '100%', textAlign: 'center', pt: 5, pb: 2, bgcolor: 'background.paper' }}>
-          <img src="/logo.png" alt="Logo" style={{ height: 84, marginBottom: 10 }} />
+          <img src="/eloninvestmentlogo.jpg" alt="Elon Investment Logo" style={{ height: 90, maxWidth: 200, marginBottom: 12, objectFit: 'contain', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.18)', background: '#fff' }} />
           <Typography variant="h4" sx={{ fontWeight: 900, color: 'primary.main', mb: 1 }}>Welcome to Elon Investment</Typography>
           <Typography variant="h5" sx={{ fontWeight: 800, color: 'success.main', mb: 1 }}>Sign Up for Free</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>It's Free to Sign up and only takes a minute.</Typography>
