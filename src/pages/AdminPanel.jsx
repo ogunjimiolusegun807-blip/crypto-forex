@@ -23,6 +23,8 @@ export default function AdminPanel() {
   const [kycRequests, setKycRequests] = useState([]);
   const [kycLoading, setKycLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  // Helper to derive activity id from various possible shapes
+  const getActivityId = (kyc) => kyc?.activityId || kyc?.id || (kyc?.activity && (kyc.activity.id || kyc.activity.activityId)) || null;
   // Deposit state
   const [depositRequests, setDepositRequests] = useState([]);
   const [depositLoading, setDepositLoading] = useState(false);
@@ -58,26 +60,34 @@ export default function AdminPanel() {
 
   // Approve/reject KYC
   const handleApproveKYC = async (activityId) => {
+    if (!activityId) {
+      setActionNotification({ open: true, type: 'error', message: 'Missing activity id for approval.' });
+      return;
+    }
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
       await userAPI.approveKYC(activityId, token);
-      setKycRequests(prev => prev.map(k => k.activityId === activityId ? { ...k, kycStatus: 'verified' } : k));
+      setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'verified' } : k)));
       setActionNotification({ open: true, type: 'success', message: 'KYC approved and user account activated.' });
-    } catch {
-      setActionNotification({ open: true, type: 'error', message: 'Failed to approve KYC.' });
+    } catch (err) {
+      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve KYC.' });
     }
     setLoading(false);
   };
   const handleRejectKYC = async (activityId) => {
+    if (!activityId) {
+      setActionNotification({ open: true, type: 'error', message: 'Missing activity id for rejection.' });
+      return;
+    }
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
       await userAPI.rejectKYC(activityId, token);
-      setKycRequests(prev => prev.map(k => k.activityId === activityId ? { ...k, kycStatus: 'rejected' } : k));
+      setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'rejected' } : k)));
       setActionNotification({ open: true, type: 'info', message: 'KYC rejected. User notified.' });
-    } catch {
-      setActionNotification({ open: true, type: 'error', message: 'Failed to reject KYC.' });
+    } catch (err) {
+      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject KYC.' });
     }
     setLoading(false);
   };
@@ -250,12 +260,21 @@ export default function AdminPanel() {
                     </Box>
                   </Box>
                   <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                    <Button variant="contained" color="success" disabled={kyc.kycStatus === 'verified' || loading} onClick={() => handleApproveKYC(kyc.activityId)}>
-                      {loading ? 'Approving...' : 'Approve'}
-                    </Button>
-                    <Button variant="contained" color="error" disabled={kyc.kycStatus === 'rejected' || loading} onClick={() => handleRejectKYC(kyc.activityId)}>
-                      {loading ? 'Rejecting...' : 'Reject'}
-                    </Button>
+                    {
+                      (() => {
+                        const id = getActivityId(kyc);
+                        return (
+                          <>
+                            <Button variant="contained" color="success" disabled={!id || kyc.kycStatus === 'verified' || loading} onClick={() => handleApproveKYC(id)}>
+                              {loading ? 'Approving...' : 'Approve'}
+                            </Button>
+                            <Button variant="contained" color="error" disabled={!id || kyc.kycStatus === 'rejected' || loading} onClick={() => handleRejectKYC(id)}>
+                              {loading ? 'Rejecting...' : 'Reject'}
+                            </Button>
+                          </>
+                        );
+                      })()
+                    }
                   </Box>
                 </CardContent>
               </Card>
