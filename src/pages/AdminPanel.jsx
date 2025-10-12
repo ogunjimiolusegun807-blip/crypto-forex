@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
+import Switch from '@mui/material/Switch';
+import Tooltip from '@mui/material/Tooltip';
+import { getAppTheme } from '../theme';
 import { Box, Typography, Tabs, Tab, Card, CardContent, Grid, Button, Alert, Stack, Divider, TextField, Chip, Avatar, Dialog, DialogContent, DialogActions, Drawer, List, ListItemButton, ListItemIcon, ListItemText, IconButton, Badge } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -21,11 +25,20 @@ export default function AdminPanel() {
   // Drawer state for mobile/hamburger
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Theme (light/dark)
+  const [mode, setMode] = useState(() => localStorage.getItem('appTheme') || 'light');
+  const theme = getAppTheme(mode);
+
+  // sidebar collapsed (icons-only) for desktop
+  const [collapsed, setCollapsed] = useState(false);
+
   // Dashboard live stats
   const [stats, setStats] = useState({ totalUsers: 0, inactiveUsers: 0, verifiedKyc: 0, deposits: 0, withdrawals: 0 });
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // helper to refresh dashboard stats
   const refreshStats = async (token) => {
+    // cache-first: if we already have cached stats, we'll still fetch fresh in background
     try {
       const users = await userAPI.adminGetAllUsers(token);
       const deposits = await userAPI.adminGetAllDeposits(token);
@@ -36,11 +49,22 @@ export default function AdminPanel() {
       const verifiedKyc = (kycData || []).filter(k => (k.kycStatus || (k.activity && k.activity.status) || '').toString().toLowerCase() === 'verified').length;
       const depositCount = (deposits || []).length;
       const withdrawalCount = (withdrawals || []).length;
-      setStats({ totalUsers, inactiveUsers, verifiedKyc, deposits: depositCount, withdrawals: withdrawalCount });
+      const newStats = { totalUsers, inactiveUsers, verifiedKyc, deposits: depositCount, withdrawals: withdrawalCount };
+      setStats(newStats);
+      const now = Date.now();
+      setLastUpdated(now);
+      try { localStorage.setItem('adminDashboardStats', JSON.stringify({ stats: newStats, ts: now })); } catch (e) {}
+      return newStats;
     } catch (e) {
       // non-fatal
+      return null;
     }
   };
+
+  // persist theme
+  useEffect(() => {
+    try { localStorage.setItem('appTheme', mode); } catch (e) {}
+  }, [mode]);
 
   // Super admin check
   useEffect(() => {
@@ -231,6 +255,17 @@ export default function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     if (!token) return;
     // initial
+    // try to read cached stats first for immediate UI
+    try {
+      const raw = localStorage.getItem('adminDashboardStats');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.stats) {
+          setStats(parsed.stats);
+          if (parsed.ts) setLastUpdated(parsed.ts);
+        }
+      }
+    } catch (e) {}
     refreshStats(token);
     const iv = setInterval(() => refreshStats(token), 10000); // refresh every 10s
     const onUserUpdated = () => refreshStats(token);
@@ -254,7 +289,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {plans.map(plan => (
             <Grid item xs={12} md={6} lg={4} key={plan.id}>
-              <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>{plan.name}</Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -369,7 +404,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {signals.map(signal => (
             <Grid item xs={12} md={6} lg={4} key={signal.id}>
-              <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>{signal.name}</Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
@@ -740,7 +775,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {depositRequests.map(deposit => (
             <Grid item xs={12} md={6} lg={4} key={deposit.id}>
-              <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>
                     {deposit.username || deposit.userName || deposit.user?.name || 'User'}
@@ -881,7 +916,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {withdrawalRequests.map(withdrawal => (
             <Grid item xs={12} md={6} lg={4} key={withdrawal.id}>
-              <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
                 <CardContent>
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>
                     {withdrawal.username || withdrawal.userName || withdrawal.user?.name || 'User'}
@@ -933,7 +968,7 @@ export default function AdminPanel() {
         <Grid container spacing={3}>
           {allUsers.map(u => (
             <Grid item xs={12} md={6} lg={4} key={u.id || u._id || u.userId || u.email}>
-              <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
+              <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar sx={{ bgcolor: 'primary.main' }}>{(u.username && u.username[0]) || (u.email && u.email[0]) || 'U'}</Avatar>
@@ -970,7 +1005,7 @@ export default function AdminPanel() {
   const renderSettings = () => (
     <Box>
       <Typography variant="h5" color="primary" fontWeight={700} gutterBottom>Admin Settings</Typography>
-      <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6, maxWidth: 400, mx: 'auto', mt: 2 }}>
+  <Card sx={{ bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 18px rgba(15,23,42,0.06)', maxWidth: 600, mx: 'auto', mt: 2 }}>
         <CardContent>
           <form
             onSubmit={async e => {
@@ -1008,43 +1043,61 @@ export default function AdminPanel() {
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#232742', p: 2, display: 'flex', gap: 2 }}>
+    <ThemeProvider theme={theme}>
+    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default, p: 2, display: 'flex', gap: 2 }}>
       {/* Left drawer / vertical menu */}
-      <Box sx={{ width: { xs: 56, md: 240 }, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h6" color="primary" fontWeight={700} sx={{ pl: 1, display: { xs: 'none', md: 'block' } }}>Admin</Typography>
-          <IconButton color="inherit" onClick={() => setDrawerOpen(true)} sx={{ display: { md: 'none' } }}><MenuIcon /></IconButton>
+      <Box onMouseEnter={() => { if (collapsed) setCollapsed(false); }} onMouseLeave={() => {}} sx={{ width: { xs: 64, md: collapsed ? 80 : 260 }, display: 'flex', flexDirection: 'column', bgcolor: theme.palette.background.paper, borderRadius: 2, boxShadow: 1, p: 1, transition: 'width 220ms ease' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, px: 1 }}>
+          <Typography variant="h6" color="primary" fontWeight={700} sx={{ display: { xs: 'none', md: collapsed ? 'none' : 'block' } }}>Admin</Typography>
+          <Box>
+            <IconButton color="inherit" onClick={() => setDrawerOpen(true)} sx={{ display: { md: 'none' } }}><MenuIcon /></IconButton>
+            <IconButton color="inherit" onClick={() => setCollapsed(c => !c)} sx={{ display: { xs: 'none', md: 'inline-flex' } }}>{collapsed ? <MenuIcon /> : <MenuIcon />}</IconButton>
+          </Box>
         </Box>
         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
           <List>
+            <Tooltip title={collapsed ? 'Dashboard' : ''} placement="right">
             <ListItemButton selected={tab === 0} onClick={() => setTab(0)}>
               <ListItemIcon><DashboardIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Dashboard" />
+              {!collapsed && <ListItemText primary="Dashboard" />}
             </ListItemButton>
+            </Tooltip>
+            <Tooltip title={collapsed ? 'Deposits' : ''} placement="right">
             <ListItemButton selected={tab === 1} onClick={() => setTab(1)}>
               <ListItemIcon><PaymentIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Deposits" />
+              {!collapsed && <ListItemText primary="Deposits" />}
             </ListItemButton>
+            </Tooltip>
+            <Tooltip title={collapsed ? 'Withdrawals' : ''} placement="right">
             <ListItemButton selected={tab === 2} onClick={() => setTab(2)}>
               <ListItemIcon><AccountBalanceWalletIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Withdrawals" />
+              {!collapsed && <ListItemText primary="Withdrawals" />}
             </ListItemButton>
+            </Tooltip>
+            <Tooltip title={collapsed ? 'Plans' : ''} placement="right">
             <ListItemButton selected={tab === 3} onClick={() => setTab(3)}>
               <ListItemIcon><PeopleIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Plans" />
+              {!collapsed && <ListItemText primary="Plans" />}
             </ListItemButton>
+            </Tooltip>
+            <Tooltip title={collapsed ? 'Signals' : ''} placement="right">
             <ListItemButton selected={tab === 4} onClick={() => setTab(4)}>
               <ListItemIcon><VerifiedUserIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Signals" />
+              {!collapsed && <ListItemText primary="Signals" />}
             </ListItemButton>
+            </Tooltip>
+            <Tooltip title={collapsed ? 'Users' : ''} placement="right">
             <ListItemButton selected={tab === 5} onClick={() => setTab(5)}>
               <ListItemIcon><PeopleIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Users" />
+              {!collapsed && <ListItemText primary="Users" />}
             </ListItemButton>
+            </Tooltip>
+            <Tooltip title={collapsed ? 'Settings' : ''} placement="right">
             <ListItemButton selected={tab === 6} onClick={() => setTab(6)}>
               <ListItemIcon><PersonOffIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Settings" />
+              {!collapsed && <ListItemText primary="Settings" />}
             </ListItemButton>
+            </Tooltip>
           </List>
         </Box>
       </Box>
@@ -1088,7 +1141,11 @@ export default function AdminPanel() {
       <Box sx={{ flex: 1, p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="h4" color="primary" fontWeight={700}>Admin Dashboard</Typography>
-          <IconButton color="inherit" sx={{ display: { md: 'none' } }} onClick={() => setDrawerOpen(true)}><MenuIcon /></IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="caption" color="text.secondary">{mode === 'light' ? 'Light' : 'Dark'}</Typography>
+            <Switch size="small" checked={mode === 'dark'} onChange={(e) => setMode(e.target.checked ? 'dark' : 'light')} />
+            <IconButton color="inherit" sx={{ display: { md: 'none' } }} onClick={() => setDrawerOpen(true)}><MenuIcon /></IconButton>
+          </Box>
         </Box>
         <Divider sx={{ mb: 3, bgcolor: 'primary.main' }} />
 
@@ -1103,9 +1160,21 @@ export default function AdminPanel() {
         {/* Dashboard stats view */}
         {tab === 0 && (
           <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 1 }}>
+              <Button variant="outlined" size="small" onClick={async () => {
+                const token = localStorage.getItem('adminToken');
+                if (!token) return;
+                setActionNotification({ open: true, type: 'info', message: 'Refreshing dashboard...' });
+                try {
+                  await refreshStats(token);
+                  setActionNotification({ open: true, type: 'success', message: 'Dashboard refreshed.' });
+                } catch (e) { setActionNotification({ open: true, type: 'error', message: 'Refresh failed.' }); }
+              }} sx={{ mr: 2 }}>Refresh</Button>
+              {lastUpdated ? <Typography variant="caption" color="rgba(255,255,255,0.6)">Last updated: {new Date(lastUpdated).toLocaleString()}</Typography> : null}
+            </Box>
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                  <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.totalUsers} color="primary">
@@ -1120,7 +1189,7 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.inactiveUsers} color="warning">
@@ -1135,7 +1204,7 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.verifiedKyc} color="success">
@@ -1150,7 +1219,7 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.deposits} color="primary">
@@ -1165,7 +1234,7 @@ export default function AdminPanel() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={4} lg={2}>
-                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                <Card sx={{ p: 2, bgcolor: '#ffffff', color: '#0f1724', borderRadius: 2, boxShadow: '0 6px 20px rgba(15,23,42,0.06)' }}>
                   <CardContent>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Badge badgeContent={stats.withdrawals} color="error">
@@ -1252,5 +1321,6 @@ export default function AdminPanel() {
 
       </Box>
     </Box>
+    </ThemeProvider>
   );
 }
