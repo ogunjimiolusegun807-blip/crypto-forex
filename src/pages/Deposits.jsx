@@ -52,6 +52,13 @@ const depositMethods = [
     qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=litecoin:ltc1qgx0g38u9jnz8rqerq5feqnf8u3zwjpmyqu2ney',
     currency: 'LTC',
   },
+  {
+    name: 'Tether (USDT)',
+    // Replace the placeholder with your actual USDT receiving address and optionally note the network (ERC20/TRC20/OMNI)
+    address: '0xda77aa81Ea9A0736680491739AFf8d29Aa96d9a1',
+    qr: 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=ethereum:0xda77aa81Ea9A0736680491739AFf8d29Aa96d9a1',
+    currency: 'USDT',
+  },
 ];
 
 export default function Deposits() {
@@ -365,7 +372,7 @@ export default function Deposits() {
           fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
         }}
       >
-        Deposit Using Bitcoin/Ethereum/Litecoin
+    Deposit Using Bitcoin/Ethereum/Litecoin/USDT
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
