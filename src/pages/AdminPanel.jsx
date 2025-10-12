@@ -464,7 +464,15 @@ export default function AdminPanel() {
     try {
       const amt = Number(creditAmount);
       if (Number.isNaN(amt) || amt <= 0) throw new Error('Invalid amount');
-      await userAPI.approveDepositWithAmount(creditingDeposit.id, amt, token);
+      // Use activity id if present, otherwise fallback to approve by userId
+      const idToUse = creditingDeposit.id || creditingDeposit.activityId;
+      if (idToUse) {
+        await userAPI.approveDepositWithAmount(idToUse, amt, token);
+      } else {
+        const userId = creditingDeposit.userId || creditingDeposit.user?.id;
+        if (!userId) throw new Error('No user id available for fallback');
+        await userAPI.approveDepositByUser(userId, amt, token);
+      }
       setDepositRequests(prev => prev.map(d => d.id === creditingDeposit.id ? { ...d, status: 'approved' } : d));
       setActionNotification({ open: true, type: 'success', message: 'Deposit credited and user balance updated.' });
       setCreditDialogOpen(false);
