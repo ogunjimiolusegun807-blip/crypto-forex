@@ -241,9 +241,37 @@ export default function AdminPanel() {
       {/* Plan edit/create dialog */}
       <Dialog open={planDialogOpen} onClose={() => { setPlanDialogOpen(false); setEditingPlan(null); }} maxWidth="sm" fullWidth>
         <DialogContent>
-          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>{editingPlan && editingPlan.id ? 'Edit Plan' : 'Create Plan'}</Typography>
-          <TextField fullWidth label="Name" sx={{ mb: 2 }} value={editingPlan?.name || ''} onChange={e => setEditingPlan(p => ({ ...p, name: e.target.value }))} />
-          <TextField fullWidth label="Type" sx={{ mb: 2 }} value={editingPlan?.type || ''} onChange={e => setEditingPlan(p => ({ ...p, type: e.target.value }))} />
+            <Typography variant="h6" color="primary" sx={{ mb: 2 }}>{editingPlan && editingPlan.id ? 'Edit Plan' : 'Create Plan'}</Typography>
+            {/* Template selector: Bronze / Gold / Platinum */}
+            <TextField
+              select
+              fullWidth
+              label="Plan Name (template)"
+              sx={{ mb: 2 }}
+              value={editingPlan?.name || ''}
+              SelectProps={{ native: true }}
+              onChange={e => {
+                const name = e.target.value;
+                // apply template defaults when a template is chosen
+                const templates = {
+                  'Bronze Plan': { name: 'Bronze Plan', type: 'regular', roi: '500', minAmount: 4000, maxAmount: 10000, duration: '2 weeks', color: '#CD7F32', gradient: 'linear-gradient(135deg, #CD7F32 0%, #A0522D 100%)', features: ['Daily ROI of 500%','24/7 Customer Support','Secure Investment'] },
+                  'Gold Plan': { name: 'Gold Plan', type: 'VIP', roi: '750', minAmount: 5200, maxAmount: 20000, duration: '2 weeks', color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', features: ['Daily ROI of 750%','VIP Customer Support','Priority Withdrawal'] },
+                  'Platinum Plan': { name: 'Platinum Plan', type: 'VIP', roi: '1200', minAmount: 10000, maxAmount: 50000000, duration: '7 Days', color: '#E5E4E2', gradient: 'linear-gradient(135deg, #E5E4E2 0%, #C0C0C0 100%)', features: ['Daily ROI of 1200%','Premium VIP Support','Instant Withdrawal'] }
+                };
+                if (templates[name]) setEditingPlan(p => ({ ...p, ...templates[name] }));
+                else setEditingPlan(p => ({ ...p, name }));
+              }}
+            >
+              <option value="">Custom / Select template</option>
+              <option value="Bronze Plan">Bronze Plan</option>
+              <option value="Gold Plan">Gold Plan</option>
+              <option value="Platinum Plan">Platinum Plan</option>
+            </TextField>
+            {/* Type selector: regular / VIP */}
+            <TextField fullWidth select label="Type" sx={{ mb: 2 }} value={editingPlan?.type || ''} SelectProps={{ native: true }} onChange={e => setEditingPlan(p => ({ ...p, type: e.target.value }))}>
+              <option value="regular">regular</option>
+              <option value="VIP">VIP</option>
+            </TextField>
           <TextField fullWidth label="ROI (number)" sx={{ mb: 2 }} value={editingPlan?.roi || ''} onChange={e => setEditingPlan(p => ({ ...p, roi: e.target.value }))} />
           <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid item xs={6}><TextField fullWidth label="Min Amount" value={editingPlan?.minAmount || 0} onChange={e => setEditingPlan(p => ({ ...p, minAmount: Number(e.target.value) }))} /></Grid>
