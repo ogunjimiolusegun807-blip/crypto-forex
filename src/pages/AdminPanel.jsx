@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Tabs, Tab, Card, CardContent, Grid, Button, Alert, Stack, Divider, TextField, Chip, Avatar, Dialog, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Tabs, Tab, Card, CardContent, Grid, Button, Alert, Stack, Divider, TextField, Chip, Avatar, Dialog, DialogContent, DialogActions, Drawer, List, ListItemButton, ListItemIcon, ListItemText, IconButton, Badge } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
+import PersonOffIcon from '@mui/icons-material/PersonOff';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import PaymentIcon from '@mui/icons-material/Payment';
 import { useNavigate } from 'react-router-dom';
 import { userAPI } from '../services/api';
 
@@ -10,6 +17,30 @@ export default function AdminPanel() {
   const [actionNotification, setActionNotification] = useState({ open: false, type: '', message: '' });
   // removed global clear tab controls; per-card actions should handle removals
   const navigate = useNavigate();
+
+  // Drawer state for mobile/hamburger
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Dashboard live stats
+  const [stats, setStats] = useState({ totalUsers: 0, inactiveUsers: 0, verifiedKyc: 0, deposits: 0, withdrawals: 0 });
+
+  // helper to refresh dashboard stats
+  const refreshStats = async (token) => {
+    try {
+      const users = await userAPI.adminGetAllUsers(token);
+      const deposits = await userAPI.adminGetAllDeposits(token);
+      const withdrawals = await userAPI.adminGetAllWithdrawals(token);
+      const kycData = await userAPI.adminGetAllKYC(token);
+      const totalUsers = (users || []).length;
+      const inactiveUsers = (users || []).filter(u => !u.isActive && !u.isActivated && !(u.activated)).length;
+      const verifiedKyc = (kycData || []).filter(k => (k.kycStatus || (k.activity && k.activity.status) || '').toString().toLowerCase() === 'verified').length;
+      const depositCount = (deposits || []).length;
+      const withdrawalCount = (withdrawals || []).length;
+      setStats({ totalUsers, inactiveUsers, verifiedKyc, deposits: depositCount, withdrawals: withdrawalCount });
+    } catch (e) {
+      // non-fatal
+    }
+  };
 
   // Super admin check
   useEffect(() => {
@@ -164,31 +195,29 @@ export default function AdminPanel() {
   const [usersLoading, setUsersLoading] = useState(false);
 
   useEffect(() => {
+    // Load resource-specific lists when their menu is opened
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
     if (tab === 3) {
       setPlansLoading(true);
-      const token = localStorage.getItem('adminToken');
       userAPI.adminGetAllPlans(token)
         .then(setPlans)
         .catch(() => setActionNotification({ open: true, type: 'error', message: 'Failed to fetch plans.' }))
         .finally(() => setPlansLoading(false));
     } else if (tab === 4) {
       setSignalsLoading(true);
-      const token = localStorage.getItem('adminToken');
       userAPI.adminGetAllSignals(token)
         .then(setSignals)
         .catch(() => setActionNotification({ open: true, type: 'error', message: 'Failed to fetch signals.' }))
         .finally(() => setSignalsLoading(false));
     }
-    // fetch users for manual credit when admin opens deposits tab (or you can move this to settings)
+    // fetch users for manual credit when admin opens deposits tab
     if (tab === 1) {
-      const token = localStorage.getItem('adminToken');
       userAPI.adminGetAllUsers(token).then(setAllUsers).catch(() => {});
     }
 
     // fetch all users when admin opens the Users tab
     if (tab === 5) {
-      const token = localStorage.getItem('adminToken');
-      if (!token) return;
       setUsersLoading(true);
       userAPI.adminGetAllUsers(token)
         .then((data) => setAllUsers(data || []))
@@ -196,6 +225,21 @@ export default function AdminPanel() {
         .finally(() => setUsersLoading(false));
     }
   }, [tab]);
+
+  // Dashboard polling and event-driven refresh
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
+    // initial
+    refreshStats(token);
+    const iv = setInterval(() => refreshStats(token), 10000); // refresh every 10s
+    const onUserUpdated = () => refreshStats(token);
+    window.addEventListener('user-updated', onUserUpdated);
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener('user-updated', onUserUpdated);
+    };
+  }, []);
 
   // Tab content renderers
   // Plans tab renderer
@@ -964,89 +1008,249 @@ export default function AdminPanel() {
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#232742', p: 4 }}>
-      <Typography variant="h4" color="primary" fontWeight={700} gutterBottom>Admin Dashboard</Typography>
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} textColor="primary" indicatorColor="primary" sx={{ mb: 3 }}>
-        <Tab label="KYC" />
-        <Tab label="Deposits" />
-        <Tab label="Withdrawals" />
-        <Tab label="Plans" />
-        <Tab label="Signals" />
-        <Tab label="Users" />
-        <Tab label="Settings" />
-      </Tabs>
-      <Divider sx={{ mb: 3, bgcolor: 'primary.main' }} />
-      {actionNotification.open && (
-        <Box sx={{ position: 'fixed', top: 24, left: 0, right: 0, zIndex: 1500, display: 'flex', justifyContent: 'center' }}>
-          <Alert severity={actionNotification.type} onClose={() => setActionNotification({ ...actionNotification, open: false })} sx={{ minWidth: 320, maxWidth: 480, fontWeight: 600 }}>
-            {actionNotification.message}
-          </Alert>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#232742', p: 2, display: 'flex', gap: 2 }}>
+      {/* Left drawer / vertical menu */}
+      <Box sx={{ width: { xs: 56, md: 240 }, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6" color="primary" fontWeight={700} sx={{ pl: 1, display: { xs: 'none', md: 'block' } }}>Admin</Typography>
+          <IconButton color="inherit" onClick={() => setDrawerOpen(true)} sx={{ display: { md: 'none' } }}><MenuIcon /></IconButton>
         </Box>
-      )}
-      {/* Image preview modal */}
-      <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md" fullWidth>
-        <DialogContent sx={{ bgcolor: '#000' }}>
-          {previewImage && <img src={previewImage} alt="preview" style={{ width: '100%', height: 'auto', borderRadius: 6 }} />}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPreviewImage(null)} variant="contained">Close</Button>
-        </DialogActions>
-      </Dialog>
-      {/* Credit dialog */}
-      <Dialog open={creditDialogOpen} onClose={() => { setCreditDialogOpen(false); setCreditingDeposit(null); setCreditAmount(''); }} maxWidth="xs" fullWidth>
-        <DialogContent>
-          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Credit User Balance</Typography>
-          <Typography variant="body2" sx={{ mb: 1 }}>User: {creditingDeposit?.username || creditingDeposit?.userName || creditingDeposit?.user?.name}</Typography>
-          <TextField label="Amount to credit" fullWidth value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} sx={{ mb: 2 }} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setCreditDialogOpen(false); setCreditingDeposit(null); setCreditAmount(''); }} color="inherit">Cancel</Button>
-          <Button onClick={confirmCredit} variant="contained" color="primary">Confirm Credit</Button>
-        </DialogActions>
-      </Dialog>
-  {tab === 0 && renderKYC()}
-  {tab === 1 && renderDeposits()}
-  {tab === 2 && renderWithdrawals()}
-  {tab === 3 && renderPlans()}
-  {tab === 4 && renderSignals()}
-  {tab === 5 && renderUsers()}
-  {tab === 6 && renderSettings()}
-      {/* Manual Credit Dialog */}
-      <Dialog open={manualCreditOpen} onClose={() => setManualCreditOpen(false)} maxWidth="sm" fullWidth>
-        <DialogContent>
-          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Manual Credit User</Typography>
-          <TextField select fullWidth label="Select User" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} sx={{ mb: 2 }} SelectProps={{ native: true }}>
-            <option value="">Select user</option>
-            {allUsers.map(u => <option key={u.id} value={u.id}>{u.username} — {u.email}</option>)}
-          </TextField>
-          <TextField label="Amount" fullWidth value={manualAmount} onChange={e => setManualAmount(e.target.value)} sx={{ mb: 2 }} />
-          <TextField label="Note (optional)" fullWidth value={manualNote} onChange={e => setManualNote(e.target.value)} sx={{ mb: 2 }} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setManualCreditOpen(false)} color="inherit">Cancel</Button>
-          <Button onClick={async () => {
-            const token = localStorage.getItem('adminToken');
-            try {
-              const res = await userAPI.adminManualCredit({ userId: selectedUserId, amount: Number(manualAmount), note: manualNote }, token);
-              setActionNotification({ open: true, type: 'success', message: 'User credited successfully.' });
-              setManualCreditOpen(false);
-              setSelectedUserId(''); setManualAmount(''); setManualNote('');
-              if (res) {
-                const updated = {};
-                if (res.balance !== undefined) updated.balance = res.balance;
-                if (res.activity) updated.activity = res.activity;
-                if (Object.keys(updated).length) {
-                  updated.id = res.userId || res.user?.id || selectedUserId;
-                  try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <List>
+            <ListItemButton selected={tab === 0} onClick={() => setTab(0)}>
+              <ListItemIcon><DashboardIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Dashboard" />
+            </ListItemButton>
+            <ListItemButton selected={tab === 1} onClick={() => setTab(1)}>
+              <ListItemIcon><PaymentIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Deposits" />
+            </ListItemButton>
+            <ListItemButton selected={tab === 2} onClick={() => setTab(2)}>
+              <ListItemIcon><AccountBalanceWalletIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Withdrawals" />
+            </ListItemButton>
+            <ListItemButton selected={tab === 3} onClick={() => setTab(3)}>
+              <ListItemIcon><PeopleIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Plans" />
+            </ListItemButton>
+            <ListItemButton selected={tab === 4} onClick={() => setTab(4)}>
+              <ListItemIcon><VerifiedUserIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Signals" />
+            </ListItemButton>
+            <ListItemButton selected={tab === 5} onClick={() => setTab(5)}>
+              <ListItemIcon><PeopleIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Users" />
+            </ListItemButton>
+            <ListItemButton selected={tab === 6} onClick={() => setTab(6)}>
+              <ListItemIcon><PersonOffIcon color="primary" /></ListItemIcon>
+              <ListItemText primary="Settings" />
+            </ListItemButton>
+          </List>
+        </Box>
+      </Box>
+
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        <Box sx={{ width: 260 }} role="presentation" onClick={() => setDrawerOpen(false)}>
+          <List>
+            <ListItemButton onClick={() => setTab(0)}>
+              <ListItemIcon><DashboardIcon /></ListItemIcon>
+              <ListItemText primary="Dashboard" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setTab(1)}>
+              <ListItemIcon><PaymentIcon /></ListItemIcon>
+              <ListItemText primary="Deposits" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setTab(2)}>
+              <ListItemIcon><AccountBalanceWalletIcon /></ListItemIcon>
+              <ListItemText primary="Withdrawals" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setTab(3)}>
+              <ListItemIcon><PeopleIcon /></ListItemIcon>
+              <ListItemText primary="Plans" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setTab(4)}>
+              <ListItemIcon><VerifiedUserIcon /></ListItemIcon>
+              <ListItemText primary="Signals" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setTab(5)}>
+              <ListItemIcon><PeopleIcon /></ListItemIcon>
+              <ListItemText primary="Users" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setTab(6)}>
+              <ListItemIcon><PersonOffIcon /></ListItemIcon>
+              <ListItemText primary="Settings" />
+            </ListItemButton>
+          </List>
+        </Box>
+      </Drawer>
+
+      {/* Main content area */}
+      <Box sx={{ flex: 1, p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h4" color="primary" fontWeight={700}>Admin Dashboard</Typography>
+          <IconButton color="inherit" sx={{ display: { md: 'none' } }} onClick={() => setDrawerOpen(true)}><MenuIcon /></IconButton>
+        </Box>
+        <Divider sx={{ mb: 3, bgcolor: 'primary.main' }} />
+
+        {actionNotification.open && (
+          <Box sx={{ position: 'fixed', top: 24, left: 0, right: 0, zIndex: 1500, display: 'flex', justifyContent: 'center' }}>
+            <Alert severity={actionNotification.type} onClose={() => setActionNotification({ ...actionNotification, open: false })} sx={{ minWidth: 320, maxWidth: 480, fontWeight: 600 }}>
+              {actionNotification.message}
+            </Alert>
+          </Box>
+        )}
+
+        {/* Dashboard stats view */}
+        {tab === 0 && (
+          <Box>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6} md={4} lg={2}>
+                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Badge badgeContent={stats.totalUsers} color="primary">
+                        <PeopleIcon fontSize="large" color="primary" />
+                      </Badge>
+                      <Box>
+                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Total Users</Typography>
+                        <Typography variant="h6" fontWeight={700}>{stats.totalUsers}</Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={2}>
+                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Badge badgeContent={stats.inactiveUsers} color="warning">
+                        <PersonOffIcon fontSize="large" color="warning" />
+                      </Badge>
+                      <Box>
+                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Inactive Users</Typography>
+                        <Typography variant="h6" fontWeight={700}>{stats.inactiveUsers}</Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={2}>
+                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Badge badgeContent={stats.verifiedKyc} color="success">
+                        <VerifiedUserIcon fontSize="large" color="success" />
+                      </Badge>
+                      <Box>
+                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Verified KYC</Typography>
+                        <Typography variant="h6" fontWeight={700}>{stats.verifiedKyc}</Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={2}>
+                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Badge badgeContent={stats.deposits} color="primary">
+                        <PaymentIcon fontSize="large" color="primary" />
+                      </Badge>
+                      <Box>
+                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Deposits</Typography>
+                        <Typography variant="h6" fontWeight={700}>{stats.deposits}</Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={2}>
+                <Card sx={{ p: 2, bgcolor: '#1e2336', color: '#fff' }}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Badge badgeContent={stats.withdrawals} color="error">
+                        <AccountBalanceWalletIcon fontSize="large" color="error" />
+                      </Badge>
+                      <Box>
+                        <Typography variant="caption" color="rgba(255,255,255,0.7)">Withdrawals</Typography>
+                        <Typography variant="h6" fontWeight={700}>{stats.withdrawals}</Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+
+        {/* Existing section renderers mapped to menu tabs */}
+        {tab === 1 && renderDeposits()}
+        {tab === 2 && renderWithdrawals()}
+        {tab === 3 && renderPlans()}
+        {tab === 4 && renderSignals()}
+        {tab === 5 && renderUsers()}
+        {tab === 6 && renderSettings()}
+
+        {/* Image preview modal */}
+        <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md" fullWidth>
+          <DialogContent sx={{ bgcolor: '#000' }}>
+            {previewImage && <img src={previewImage} alt="preview" style={{ width: '100%', height: 'auto', borderRadius: 6 }} />}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setPreviewImage(null)} variant="contained">Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Credit dialog */}
+        <Dialog open={creditDialogOpen} onClose={() => { setCreditDialogOpen(false); setCreditingDeposit(null); setCreditAmount(''); }} maxWidth="xs" fullWidth>
+          <DialogContent>
+            <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Credit User Balance</Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>User: {creditingDeposit?.username || creditingDeposit?.userName || creditingDeposit?.user?.name}</Typography>
+            <TextField label="Amount to credit" fullWidth value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} sx={{ mb: 2 }} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { setCreditDialogOpen(false); setCreditingDeposit(null); setCreditAmount(''); }} color="inherit">Cancel</Button>
+            <Button onClick={confirmCredit} variant="contained" color="primary">Confirm Credit</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Manual Credit Dialog */}
+        <Dialog open={manualCreditOpen} onClose={() => setManualCreditOpen(false)} maxWidth="sm" fullWidth>
+          <DialogContent>
+            <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Manual Credit User</Typography>
+            <TextField select fullWidth label="Select User" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} sx={{ mb: 2 }} SelectProps={{ native: true }}>
+              <option value="">Select user</option>
+              {allUsers.map(u => <option key={u.id} value={u.id}>{u.username} — {u.email}</option>)}
+            </TextField>
+            <TextField label="Amount" fullWidth value={manualAmount} onChange={e => setManualAmount(e.target.value)} sx={{ mb: 2 }} />
+            <TextField label="Note (optional)" fullWidth value={manualNote} onChange={e => setManualNote(e.target.value)} sx={{ mb: 2 }} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setManualCreditOpen(false)} color="inherit">Cancel</Button>
+            <Button onClick={async () => {
+              const token = localStorage.getItem('adminToken');
+              try {
+                const res = await userAPI.adminManualCredit({ userId: selectedUserId, amount: Number(manualAmount), note: manualNote }, token);
+                setActionNotification({ open: true, type: 'success', message: 'User credited successfully.' });
+                setManualCreditOpen(false);
+                setSelectedUserId(''); setManualAmount(''); setManualNote('');
+                if (res) {
+                  const updated = {};
+                  if (res.balance !== undefined) updated.balance = res.balance;
+                  if (res.activity) updated.activity = res.activity;
+                  if (Object.keys(updated).length) {
+                    updated.id = res.userId || res.user?.id || selectedUserId;
+                    try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+                  }
                 }
+              } catch (err) {
+                setActionNotification({ open: true, type: 'error', message: err.message || 'Manual credit failed.' });
               }
-            } catch (err) {
-              setActionNotification({ open: true, type: 'error', message: err.message || 'Manual credit failed.' });
-            }
-          }} variant="contained" color="primary">Credit</Button>
-        </DialogActions>
-      </Dialog>
-      {/* Global clear tab removed — per-card actions handle individual removals */}
+            }} variant="contained" color="primary">Credit</Button>
+          </DialogActions>
+        </Dialog>
+
+      </Box>
     </Box>
   );
 }
