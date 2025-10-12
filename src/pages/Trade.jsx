@@ -209,10 +209,10 @@ export default function Trade() {
     return { label: 'Inactive', color: 'default' };
   };
 
-  // Use real user data for trades and balance
-  const accountBalance = user?.totalBalance ?? 0;
-  const activeTrades = user?.activeTrades ?? [];
-  const tradeHistory = user?.tradeHistory ?? [];
+  // Use real user data for trades and balance. Keep local state so UI updates immediately
+  const [accountBalance, setAccountBalance] = useState(() => user?.balance ?? 0);
+  const [activeTrades, setActiveTrades] = useState(() => user?.activeTrades ?? []);
+  const [tradeHistory, setTradeHistory] = useState(() => user?.tradeHistory ?? []);
 
   const [selectedAsset, setSelectedAsset] = useState(tradingAssets[0]);
   const [selectedMultiplier, setSelectedMultiplier] = useState(multipliers[0]);
@@ -306,11 +306,11 @@ export default function Trade() {
       pnl: 0
     };
 
-    // Update balance
-    setAccountBalance(prev => prev - trade.amount);
+  // Update balance (local UI). Persisting to backend/user context is outside this page's scope
+  setAccountBalance(prev => prev - trade.amount);
 
-    // Add to active trades
-    setActiveTrades(prev => [newTrade, ...prev]);
+  // Add to active trades
+  setActiveTrades(prev => [newTrade, ...prev]);
 
     setSnackbar({
       open: true,
@@ -340,12 +340,12 @@ export default function Trade() {
       timestamp: new Date()
     };
 
-    // Update balance
-    setAccountBalance(prev => prev + trade.amount + pnl);
+  // Update balance (local UI)
+  setAccountBalance(prev => prev + trade.amount + pnl);
 
-    // Move to history
-    setActiveTrades(prev => prev.filter(t => t.id !== tradeId));
-    setTradeHistory(prev => [updatedTrade, ...prev]);
+  // Move to history
+  setActiveTrades(prev => prev.filter(t => t.id !== tradeId));
+  setTradeHistory(prev => [updatedTrade, ...prev]);
 
     setSnackbar({
       open: true,
