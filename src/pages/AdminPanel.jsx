@@ -330,7 +330,8 @@ export default function AdminPanel() {
                                   setLoading(true);
                                   try {
                                     await userAPI.approveKYCByUser(userId, token);
-                                    setKycRequests(prev => prev.map(k => (k.userId === userId ? { ...k, kycStatus: 'verified' } : k)));
+                                    // remove the KYC card for this user so admin sees only pending/new items
+                                    setKycRequests(prev => prev.filter(k => !(k.userId === userId || k.user?.id === userId || getActivityId(k) === userId)));
                                     setActionNotification({ open: true, type: 'success', message: 'KYC approved by user id.' });
                                   } catch (err) {
                                     setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve by user.' });
@@ -355,7 +356,8 @@ export default function AdminPanel() {
                                   setLoading(true);
                                   try {
                                     await userAPI.rejectKYCByUser(userId, token);
-                                    setKycRequests(prev => prev.map(k => (k.userId === userId ? { ...k, kycStatus: 'rejected' } : k)));
+                                      // remove the rejected KYC card so admin can focus on remaining submissions
+                                      setKycRequests(prev => prev.filter(k => !(k.userId === userId || k.user?.id === userId || getActivityId(k) === userId)));
                                     setActionNotification({ open: true, type: 'info', message: 'KYC rejected by user id.' });
                                   } catch (err) {
                                     setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject by user.' });
