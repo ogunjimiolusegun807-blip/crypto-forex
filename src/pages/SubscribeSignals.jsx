@@ -516,7 +516,7 @@ export default function SubscribeSignals() {
                       mb: 2,
                       color: plan.color
                     }}>
-                      {React.cloneElement(plan.icon, { sx: { fontSize: '3rem' } })}
+                      {plan.icon ? React.cloneElement(plan.icon, { sx: { fontSize: '3rem' } }) : <SignalCellularAlt sx={{ fontSize: '3rem' }} />}
                     </Box>
                     
                     <Chip
@@ -576,8 +576,8 @@ export default function SubscribeSignals() {
                   </Box>
 
                   {/* Features List */}
-                  <List sx={{ flex: 1, py: 0 }}>
-                    {plan.features.map((feature, index) => (
+                    <List sx={{ flex: 1, py: 0 }}>
+                    {(plan.features || []).map((feature, index) => (
                       <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
                         <ListItemIcon sx={{ minWidth: 32 }}>
                           <CheckCircle sx={{ color: 'primary.main', fontSize: '1.2rem' }} />
