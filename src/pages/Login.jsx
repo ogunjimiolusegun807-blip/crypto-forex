@@ -42,25 +42,25 @@ export default function Login() {
   };
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-      <Grid container spacing={0} sx={{ width: '100%', maxWidth: 900, minHeight: { xs: '100vh', sm: '80vh', md: '80vh' }, boxShadow: { md: 6 }, borderRadius: { md: 4 }, overflow: 'hidden', bgcolor: 'background.paper' }} alignItems="stretch" justifyContent="center">
+      <Grid container spacing={0} sx={{ width: '100%', maxWidth: 900, minHeight: { xs: '100vh', sm: '80vh', md: '80vh' }, boxShadow: { md: 6 }, borderRadius: { md: 4 }, overflow: 'hidden', bgcolor: 'transparent' }} alignItems="stretch" justifyContent="center">
         {/* Left: hero / brand (tablet & desktop) */}
-        <Grid item xs={12} sm={5} md={5} sx={{ display: { xs: 'none', sm: 'block' }, bgcolor: 'background.paper', p: { sm: 4, md: 6 }, borderRight: { sm: '1px solid #222' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-          <Box sx={{ width: '100%', textAlign: 'center' }}>
-            <img src="/logo.png" alt="Logo" style={{ height: 72, marginBottom: 16 }} />
-            <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: 1.2, fontSize: { sm: '2rem', md: '2.5rem' } }}>INTERSPACE</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { sm: '1.1rem', md: '1.3rem' } }}>BROKER</Typography>
-            <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary', maxWidth: 320, mx: 'auto', fontSize: { sm: '0.95rem', md: '1rem' } }}>Securely trade crypto, forex and stocks with institutional grade tools and fast execution.</Typography>
+        <Grid item xs={12} sm={5} md={5} sx={{ display: { xs: 'none', sm: 'block' }, bgcolor: 'transparent', p: { sm: 4, md: 6 }, borderRight: { sm: 'none' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <Box sx={{ width: '100%', textAlign: 'center', backdropFilter: 'blur(8px)', background: 'rgba(30,32,40,0.55)', borderRadius: 5, boxShadow: 6, py: { sm: 4, md: 6 }, px: { sm: 2, md: 4 }, border: '1.5px solid rgba(255,255,255,0.08)' }}>
+            <img src="/logo.png" alt="Logo" style={{ height: 72, marginBottom: 18, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))' }} />
+            <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: 1.5, fontSize: { sm: '2.2rem', md: '2.7rem' }, textShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>INTERSPACE</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { sm: '1.2rem', md: '1.4rem' }, letterSpacing: 1, mb: 1 }}>BROKER</Typography>
+            <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary', maxWidth: 320, mx: 'auto', fontSize: { sm: '1rem', md: '1.08rem' }, fontWeight: 500, opacity: 0.92 }}>Securely trade crypto, forex and stocks with institutional grade tools and fast execution.</Typography>
           </Box>
         </Grid>
 
         {/* Right: form */}
-        <Grid item xs={12} sm={7} md={7} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, sm: 4, md: 6 } }}>
-          <Card sx={{ width: '100%', maxWidth: 400, mx: 'auto', p: { xs: 3, sm: 4 }, borderRadius: 3, boxShadow: { xs: 3, sm: 6 }, bgcolor: 'background.paper' }}>
+        <Grid item xs={12} sm={7} md={7} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, sm: 4, md: 6 }, bgcolor: 'transparent' }}>
+          <Card sx={{ width: '100%', maxWidth: 400, mx: 'auto', p: { xs: 3, sm: 4 }, borderRadius: 5, boxShadow: { xs: 4, sm: 8 }, bgcolor: 'rgba(30,32,40,0.85)', backdropFilter: 'blur(10px)', border: '1.5px solid rgba(255,255,255,0.10)', color: '#fff' }}>
             <form onSubmit={handleLogin}>
-              <Box sx={{ textAlign: { xs: 'center', md: 'left' }, mb: 2 }}>
-                <img src="/logo.png" alt="Logo" style={{ height: 56, marginBottom: 8 }} />
-                <Typography variant="h5" fontWeight={900} color="primary">Sign In</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Sign in to start trading crypto, forex and stocks.</Typography>
+              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <img src="/logo.png" alt="Logo" style={{ height: 48, marginBottom: 8, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />
+                <Typography variant="h5" fontWeight={900} color="primary" sx={{ letterSpacing: 1, fontSize: '1.45rem', mb: 0.5 }}>Sign In</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontWeight: 500, opacity: 0.92 }}>Sign in to start trading crypto, forex and stocks.</Typography>
               </Box>
 
               <TextField
@@ -69,8 +69,9 @@ export default function Login() {
                 fullWidth
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                sx={{ mt: 2, mb: 2 }}
-                InputLabelProps={{ sx: { color: 'text.secondary' } }}
+                sx={{ mt: 2, mb: 2, bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2, input: { color: '#fff' } }}
+                InputLabelProps={{ sx: { color: 'text.secondary', fontWeight: 500 } }}
+                InputProps={{ sx: { color: '#fff', fontWeight: 500 } }}
               />
 
               <TextField
@@ -79,8 +80,8 @@ export default function Login() {
                 fullWidth
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                sx={{ mb: 2 }}
-                InputLabelProps={{ sx: { color: 'text.secondary' } }}
+                sx={{ mb: 2, bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2, input: { color: '#fff' } }}
+                InputLabelProps={{ sx: { color: 'text.secondary', fontWeight: 500 } }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -88,11 +89,12 @@ export default function Login() {
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
+                  sx: { color: '#fff', fontWeight: 500 }
                 }}
               />
 
-              <Button variant="contained" color="primary" fullWidth size="large" type="submit" sx={{ fontWeight: 700, mt: 1, borderRadius: 6 }} disabled={loading || userLoading}>
+              <Button variant="contained" color="primary" fullWidth size="large" type="submit" sx={{ fontWeight: 700, mt: 1.5, borderRadius: 8, fontSize: '1.1rem', boxShadow: 3, py: 1.2, letterSpacing: 1 }} disabled={loading || userLoading}>
                 {(loading || userLoading) ? 'Signing in...' : 'SIGN IN'}
               </Button>
 
