@@ -320,7 +320,7 @@ export default function Withdrawals() {
               fontSize: { xs: '0.85rem', sm: '0.9rem' }
             }}
           >
-            (Balance: $0.00)
+            (Balance: ${user?.balance ? user.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'})
           </Typography>
         </Box>
         <Divider sx={{ mb: 3 }} />

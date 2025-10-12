@@ -35,6 +35,27 @@ export const UserProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
+  // Listen for external updates (e.g., admin panel dispatching a 'user-updated' event)
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        const updated = e?.detail;
+        if (updated && updated.id) {
+          setUser(prev => {
+            if (!prev || prev.id !== updated.id) return prev;
+            const merged = { ...prev, ...updated };
+            localStorage.setItem('user', JSON.stringify(merged));
+            return merged;
+          });
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    window.addEventListener('user-updated', handler);
+    return () => window.removeEventListener('user-updated', handler);
+  }, []);
+
   const checkBackendStatus = async () => {
     // No backend health check in frontend-only mode
     setBackendStatus('fallback');
