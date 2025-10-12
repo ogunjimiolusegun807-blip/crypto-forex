@@ -44,7 +44,7 @@ export default function Login() {
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
       <Card sx={{ width: '100%', maxWidth: 440, mx: 'auto', p: { xs: 3, sm: 4, md: 5 }, borderRadius: 5, boxShadow: 8, bgcolor: 'rgba(30,32,40,0.92)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.12)', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <Box sx={{ width: '100%', textAlign: 'center', mb: 3 }}>
-          <img src="/logo.png" alt="Logo" style={{ height: 72, marginBottom: 18, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))' }} />
+          <img src="/eloninvestmentlogo.jpg" alt="Elon Investment Logo" style={{ height: 80, maxWidth: 180, marginBottom: 16, objectFit: 'contain', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.18)', background: '#fff' }} />
           <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: 1.5, fontSize: { xs: '2rem', sm: '2.2rem', md: '2.7rem' }, textShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>Elon Investment</Typography>
           <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { xs: '1.1rem', sm: '1.2rem', md: '1.4rem' }, letterSpacing: 1, mb: 1 }}>Company Login</Typography>
           <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary', maxWidth: 320, mx: 'auto', fontSize: { xs: '0.95rem', sm: '1rem', md: '1.08rem' }, fontWeight: 500, opacity: 0.92 }}>Sign in to securely trade crypto, forex and stocks with institutional grade tools and fast execution.</Typography>
