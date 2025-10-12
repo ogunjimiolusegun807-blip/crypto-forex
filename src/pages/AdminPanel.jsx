@@ -71,8 +71,9 @@ export default function AdminPanel() {
     }
     setLoading(true);
     try {
-      const res = await userAPI.approveKYC(activityId, token);
-      setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'verified' } : k)));
+  const res = await userAPI.approveKYC(activityId, token);
+  // remove the handled KYC request from the admin queue so it doesn't reappear
+  setKycRequests(prev => prev.filter(k => getActivityId(k) !== activityId));
       setActionNotification({ open: true, type: 'success', message: 'KYC approved and user account activated.' });
       if (res) {
         const updated = {};
@@ -96,8 +97,9 @@ export default function AdminPanel() {
     }
     setLoading(true);
     try {
-      const res = await userAPI.rejectKYC(activityId, token);
-      setKycRequests(prev => prev.map(k => (getActivityId(k) === activityId ? { ...k, kycStatus: 'rejected' } : k)));
+  const res = await userAPI.rejectKYC(activityId, token);
+  // remove rejected request from admin queue
+  setKycRequests(prev => prev.filter(k => getActivityId(k) !== activityId));
       setActionNotification({ open: true, type: 'info', message: 'KYC rejected. User notified.' });
       if (res) {
         const updated = {};
@@ -370,7 +372,8 @@ export default function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     try {
       const res = await userAPI.approveDeposit(id, token);
-      setDepositRequests(prev => prev.map(d => d.id === id ? { ...d, status: 'approved' } : d));
+  // remove approved deposit from admin list
+  setDepositRequests(prev => prev.filter(d => d.id !== id && d.activityId !== id));
       setActionNotification({ open: true, type: 'success', message: 'Deposit approved and user balance credited.' });
       if (res) {
         const updated = {};
@@ -393,7 +396,8 @@ export default function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     try {
       const res = await userAPI.approveWithdrawal(id, token);
-      setWithdrawalRequests(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' } : w));
+  // remove approved withdrawal from admin list
+  setWithdrawalRequests(prev => prev.filter(w => !(w.id === id || w.activityId === id)));
       setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
       // If backend returned updated balance/activity, dispatch it; otherwise create a best-effort fallback
       if (res && (res.balance !== undefined || res.activity)) {
@@ -441,7 +445,8 @@ export default function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     try {
       const res = await userAPI.rejectWithdrawal(id, token);
-      setWithdrawalRequests(prev => prev.map(w => w.id === id ? { ...w, status: 'rejected' } : w));
+  // remove rejected withdrawal from admin list
+  setWithdrawalRequests(prev => prev.filter(w => !(w.id === id || w.activityId === id)));
       setActionNotification({ open: true, type: 'info', message: 'Withdrawal rejected. User notified.' });
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
@@ -542,13 +547,15 @@ export default function AdminPanel() {
                                 let res;
                                 if (idToUse) {
                                   res = await userAPI.rejectDeposit(idToUse, token);
-                                  setDepositRequests(prev => prev.map(d => (d.id === idToUse || d.activityId === idToUse) ? { ...d, status: 'rejected' } : d));
+                                  // remove rejected deposit from admin list
+                                  setDepositRequests(prev => prev.filter(d => !(d.id === idToUse || d.activityId === idToUse)));
                                 } else {
                                   // fallback: try reject by userId when activity id missing
                                   const userId = deposit.userId || deposit.user?.id || deposit.userId;
                                   if (!userId) throw new Error('No id available to reject deposit');
                                   res = await userAPI.rejectDepositByUser(userId, token);
-                                  setDepositRequests(prev => prev.map(d => (d.userId === userId ? { ...d, status: 'rejected' } : d)));
+                                  // remove any deposits for this user from admin list
+                                  setDepositRequests(prev => prev.filter(d => d.userId !== userId));
                                 }
                                 setActionNotification({ open: true, type: 'info', message: 'Deposit rejected.' });
                                 if (res) {
@@ -599,7 +606,8 @@ export default function AdminPanel() {
         if (!userId) throw new Error('No user id available for fallback');
         res = await userAPI.approveDepositByUser(userId, amt, token);
       }
-      setDepositRequests(prev => prev.map(d => d.id === creditingDeposit.id ? { ...d, status: 'approved' } : d));
+  // remove credited deposit from admin list
+  setDepositRequests(prev => prev.filter(d => d.id !== creditingDeposit.id && d.activityId !== creditingDeposit.id && d.userId !== (creditingDeposit.userId || creditingDeposit.user?.id)));
       setActionNotification({ open: true, type: 'success', message: 'Deposit credited and user balance updated.' });
       if (res) {
         const updated = {};
