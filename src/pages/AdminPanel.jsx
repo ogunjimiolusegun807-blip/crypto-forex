@@ -361,6 +361,40 @@ export default function AdminPanel() {
       <Dialog open={signalDialogOpen} onClose={() => { setSignalDialogOpen(false); setEditingSignal(null); }} maxWidth="sm" fullWidth>
         <DialogContent>
           <Typography variant="h6" color="primary" sx={{ mb: 2 }}>{editingSignal && editingSignal.id ? 'Edit Signal' : 'Create Signal'}</Typography>
+          {/* Template selector for signals (prefill card content) */}
+          <TextField
+            select
+            fullWidth
+            label="Signal Template"
+            sx={{ mb: 2 }}
+            value={editingSignal?.name || ''}
+            SelectProps={{ native: true }}
+            onChange={e => {
+              const name = e.target.value;
+              const templates = {
+                'Alpha Signals': { name: 'Alpha Signals', price: 99, description: 'Perfect for beginners entering the trading world', features: ['5-10 signals per day','Basic market analysis','Email notifications','Community access','Mobile app access','Basic support'], accuracy: '75%', subscribers: '2,847', badge: 'STARTER', badgeColor: 'success', color: '#4CAF50' },
+                'Titan Signals': { name: 'Titan Signals', price: 149, description: 'Enhanced signals with detailed market insights', features: ['10-15 signals per day','Technical analysis reports','SMS & Email alerts','Priority community access','Risk management tips','Live chat support'], accuracy: '82%', subscribers: '5,234', badge: 'GROWTH', badgeColor: 'primary', color: '#2196F3' },
+                'Quantum Edge Signals': { name: 'Quantum Edge Signals', price: 199, description: 'Advanced algorithmic signals with AI-powered insights', features: ['15-20 signals per day','AI-powered analysis','Real-time notifications','VIP community access','Weekly market reports','24/7 priority support'], accuracy: '87%', subscribers: '8,156', badge: 'POPULAR', badgeColor: 'warning', color: '#FF9800' },
+                'Elite Trader Signals': { name: 'Elite Trader Signals', price: 249, description: 'Professional-grade signals for serious traders', features: ['20-25 signals per day','Advanced market analysis','Multi-asset coverage','Personal account manager','Live trading sessions','Educational webinars'], accuracy: '90%', subscribers: '3,892', badge: 'PROFESSIONAL', badgeColor: 'secondary', color: '#9C27B0' },
+                'Velocity Pro Signals': { name: 'Velocity Pro Signals', price: 299, description: 'High-frequency signals for active traders', features: ['25-30 signals per day','Scalping opportunities','Instant push notifications','Advanced risk metrics','Portfolio optimization','1-on-1 mentoring sessions'], accuracy: '92%', subscribers: '2,145', badge: 'VELOCITY', badgeColor: 'error', color: '#F44336' },
+                'Apex Master Signals': { name: 'Apex Master Signals', price: 399, description: 'Master-level signals with institutional-grade analysis', features: ['30-40 signals per day','Institutional insights','Multi-timeframe analysis','Custom risk parameters','Private Discord channel','Monthly strategy calls'], accuracy: '94%', subscribers: '1,567', badge: 'MASTER', badgeColor: 'info', color: '#00BCD4' },
+                'Genesis Prime Signals': { name: 'Genesis Prime Signals', price: 499, description: 'Prime-tier signals with exclusive market intelligence', features: ['40-50 signals per day','Exclusive market intelligence','Pre-market analysis','Custom trading strategies','Direct analyst access','Quarterly performance reviews'], accuracy: '96%', subscribers: '892', badge: 'PRIME', badgeColor: 'success', color: '#4CAF50' },
+                'Legendary Investor Plan': { name: 'Legendary Investor Plan', price: 999, description: 'Ultimate trading signals for professional investors', features: ['Unlimited signals','Legendary trader insights','Proprietary algorithms','Personal trading coach','Exclusive events access','White-glove service'], accuracy: '98%', subscribers: '347', badge: 'LEGENDARY', badgeColor: 'warning', color: '#FFD700' }
+              };
+              if (templates[name]) setEditingSignal(s => ({ ...s, ...templates[name] }));
+              else setEditingSignal(s => ({ ...s, name }));
+            }}
+          >
+            <option value="">Custom / Select template</option>
+            <option value="Alpha Signals">Alpha Signals</option>
+            <option value="Titan Signals">Titan Signals</option>
+            <option value="Quantum Edge Signals">Quantum Edge Signals</option>
+            <option value="Elite Trader Signals">Elite Trader Signals</option>
+            <option value="Velocity Pro Signals">Velocity Pro Signals</option>
+            <option value="Apex Master Signals">Apex Master Signals</option>
+            <option value="Genesis Prime Signals">Genesis Prime Signals</option>
+            <option value="Legendary Investor Plan">Legendary Investor Plan</option>
+          </TextField>
           <TextField fullWidth label="Name" sx={{ mb: 2 }} value={editingSignal?.name || ''} onChange={e => setEditingSignal(s => ({ ...s, name: e.target.value }))} />
           <TextField fullWidth label="Price" sx={{ mb: 2 }} value={editingSignal?.price || 0} onChange={e => setEditingSignal(s => ({ ...s, price: Number(e.target.value) }))} />
           <TextField fullWidth label="Description" sx={{ mb: 2 }} value={editingSignal?.description || ''} onChange={e => setEditingSignal(s => ({ ...s, description: e.target.value }))} />
