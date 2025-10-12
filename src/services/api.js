@@ -184,6 +184,14 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  approveDepositWithAmount: async (activityId, amount, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/deposits/${activityId}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ amount })
+    });
+    return await handleResponse(res);
+  },
   rejectDeposit: async (activityId, token) => {
     const res = await fetch(`${BASE_URL}/api/admin/deposits/${activityId}/reject`, {
       method: 'POST',

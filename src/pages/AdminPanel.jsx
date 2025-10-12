@@ -28,6 +28,9 @@ export default function AdminPanel() {
   // Deposit state
   const [depositRequests, setDepositRequests] = useState([]);
   const [depositLoading, setDepositLoading] = useState(false);
+  const [creditDialogOpen, setCreditDialogOpen] = useState(false);
+  const [creditingDeposit, setCreditingDeposit] = useState(null);
+  const [creditAmount, setCreditAmount] = useState('');
   // Withdrawal state
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
@@ -407,7 +410,7 @@ export default function AdminPanel() {
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                     {deposit.status === 'pending' && (
                       <>
-                        <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveDeposit(deposit.id)}>
+                        <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => { setCreditingDeposit(deposit); setCreditAmount(deposit.amount || ''); setCreditDialogOpen(true); }}>
                           {loading ? 'Approving...' : 'Credit'}
                         </Button>
                         <Button variant="contained" color="error" size="small" disabled={loading} onClick={async () => {
@@ -433,6 +436,26 @@ export default function AdminPanel() {
       )}
     </Box>
   );
+
+  // Credit dialog confirm
+  const confirmCredit = async () => {
+    if (!creditingDeposit) return;
+    setLoading(true);
+    const token = localStorage.getItem('adminToken');
+    try {
+      const amt = Number(creditAmount);
+      if (Number.isNaN(amt) || amt <= 0) throw new Error('Invalid amount');
+      await userAPI.approveDepositWithAmount(creditingDeposit.id, amt, token);
+      setDepositRequests(prev => prev.map(d => d.id === creditingDeposit.id ? { ...d, status: 'approved' } : d));
+      setActionNotification({ open: true, type: 'success', message: 'Deposit credited and user balance updated.' });
+      setCreditDialogOpen(false);
+      setCreditingDeposit(null);
+      setCreditAmount('');
+    } catch (err) {
+      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to credit deposit.' });
+    }
+    setLoading(false);
+  };
 
   // Withdrawal tab
   const renderWithdrawals = () => (
@@ -555,6 +578,18 @@ export default function AdminPanel() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewImage(null)} variant="contained">Close</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Credit dialog */}
+      <Dialog open={creditDialogOpen} onClose={() => { setCreditDialogOpen(false); setCreditingDeposit(null); setCreditAmount(''); }} maxWidth="xs" fullWidth>
+        <DialogContent>
+          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Credit User Balance</Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>User: {creditingDeposit?.username || creditingDeposit?.userName || creditingDeposit?.user?.name}</Typography>
+          <TextField label="Amount to credit" fullWidth value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} sx={{ mb: 2 }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setCreditDialogOpen(false); setCreditingDeposit(null); setCreditAmount(''); }} color="inherit">Cancel</Button>
+          <Button onClick={confirmCredit} variant="contained" color="primary">Confirm Credit</Button>
         </DialogActions>
       </Dialog>
   {tab === 0 && renderKYC()}
