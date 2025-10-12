@@ -394,11 +394,35 @@ export default function AdminPanel() {
                     Method: {deposit.method}<br />
                     Status: <Chip label={deposit.status} color={deposit.status === 'approved' ? 'success' : deposit.status === 'pending' ? 'warning' : 'default'} size="small" />
                   </Typography>
+                  {/* Proof image preview */}
+                  <Box sx={{ mt: 2 }}>
+                    {(() => {
+                      const url = deposit.proof || deposit.proofUrl || (deposit.proof && deposit.proof.url) || (deposit.files && deposit.files.proof && (deposit.files.proof.secure_url || deposit.files.proof.url || deposit.files.proof.path));
+                      if (url) {
+                        return <img src={url} alt="proof" style={{ width: 140, height: 96, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }} onClick={() => setPreviewImage(url)} />;
+                      }
+                      return null;
+                    })()}
+                  </Box>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                     {deposit.status === 'pending' && (
-                      <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveDeposit(deposit.id)}>
-                        {loading ? 'Approving...' : 'Approve'}
-                      </Button>
+                      <>
+                        <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveDeposit(deposit.id)}>
+                          {loading ? 'Approving...' : 'Credit'}
+                        </Button>
+                        <Button variant="contained" color="error" size="small" disabled={loading} onClick={async () => {
+                          const token = localStorage.getItem('adminToken');
+                          try {
+                            await userAPI.rejectDeposit(deposit.id, token);
+                            setDepositRequests(prev => prev.map(d => d.id === deposit.id ? { ...d, status: 'rejected' } : d));
+                            setActionNotification({ open: true, type: 'info', message: 'Deposit rejected.' });
+                          } catch (err) {
+                            setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject deposit.' });
+                          }
+                        }}>
+                          {loading ? 'Rejecting...' : 'Reject'}
+                        </Button>
+                      </>
                     )}
                   </Stack>
                 </CardContent>

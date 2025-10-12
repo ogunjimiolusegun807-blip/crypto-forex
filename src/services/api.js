@@ -177,6 +177,20 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  approveDeposit: async (activityId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/deposits/${activityId}/approve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  rejectDeposit: async (activityId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/deposits/${activityId}/reject`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
   adminGetAllWithdrawals: async (token) => {
     const res = await fetch(`${BASE_URL}/api/admin/withdrawals`, {
       headers: { 'Authorization': `Bearer ${token}` }

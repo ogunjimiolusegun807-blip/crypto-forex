@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { userAPI } from '../services/api';
@@ -135,6 +135,11 @@ export default function VerifyAccount() {
     addressDocument: null,
     selfiePhoto: null
   });
+  const [uploadedPreviews, setUploadedPreviews] = useState({
+    identityDocumentUrl: null,
+    addressDocumentUrl: null,
+    selfieUrl: null
+  });
   const [submitDialog, setSubmitDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -152,8 +157,42 @@ export default function VerifyAccount() {
         ...prev,
         [fileType]: file
       }));
+      // Clear any previous preview URL for this fileType when user selects a new file
+      if (fileType === 'identityDocument') setUploadedPreviews(prev => ({ ...prev, identityDocumentUrl: null }));
+      if (fileType === 'addressDocument') setUploadedPreviews(prev => ({ ...prev, addressDocumentUrl: null }));
+      if (fileType === 'selfiePhoto') setUploadedPreviews(prev => ({ ...prev, selfieUrl: null }));
     }
   };
+
+  // Prefill form and previews if user has a rejected KYC activity
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const activities = Array.isArray(user.activities) ? user.activities : [];
+      // Find latest kyc activity (search from end) which is rejected
+      let latest = null;
+      for (let i = activities.length - 1; i >= 0; i--) {
+        const a = activities[i];
+        if (a && (a.type === 'kyc' || a.type === 'KYC')) {
+          latest = a;
+          break;
+        }
+      }
+      if (latest && user.kycStatus === 'rejected') {
+        const data = latest.kycData || latest.data || {};
+        // Map only the known form keys to avoid unexpected fields
+        const keysToCopy = ['firstName','lastName','middleName','dateOfBirth','nationality','phoneNumber','email','address','city','state','zipCode','country','documentType','documentNumber','addressDocumentType'];
+        setFormData(prev => ({ ...prev, ...keysToCopy.reduce((acc, k) => { if (data[k]) acc[k] = data[k]; return acc; }, {}) }));
+        // Populate preview URLs if available
+        const identityUrl = data.identityDocumentUrl || (data.files && data.files.identityDocument && (data.files.identityDocument.secure_url || data.files.identityDocument.url || data.files.identityDocument.location || data.files.identityDocument.path));
+        const addressUrl = data.addressDocumentUrl || (data.files && data.files.addressDocument && (data.files.addressDocument.secure_url || data.files.addressDocument.url || data.files.addressDocument.location || data.files.addressDocument.path));
+        const selfieUrl = data.selfieUrl || (data.files && data.files.selfiePhoto && (data.files.selfiePhoto.secure_url || data.files.selfiePhoto.url || data.files.selfiePhoto.location || data.files.selfiePhoto.path));
+        setUploadedPreviews({ identityDocumentUrl: identityUrl || null, addressDocumentUrl: addressUrl || null, selfieUrl: selfieUrl || null });
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [user]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -883,9 +922,15 @@ export default function VerifyAccount() {
                                 </Grid>
                               </Grid>
 
-                              <Alert severity="info" sx={{ mt: 3 }}>
-                                Please review all information carefully. Once submitted, you cannot modify your KYC application.
-                              </Alert>
+                              {user?.kycStatus === 'rejected' ? (
+                                <Alert severity="warning" sx={{ mt: 3 }}>
+                                  Your previous KYC submission was rejected. Please review and resubmit updated documents.
+                                </Alert>
+                              ) : (
+                                <Alert severity="info" sx={{ mt: 3 }}>
+                                  Please review all information carefully. Once submitted, you cannot modify your KYC application while it is pending.
+                                </Alert>
+                              )}
 
                               <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
                                 <Button onClick={handleBack} sx={{ minWidth: 120 }}>
@@ -902,7 +947,7 @@ export default function VerifyAccount() {
                                     fontWeight: 600
                                   }}
                                 >
-                                  Submit for Verification
+                                  {user?.kycStatus === 'rejected' ? 'Resubmit KYC' : 'Submit for Verification'}
                                 </Button>
                               </Box>
                             </Box>
