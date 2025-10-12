@@ -949,16 +949,24 @@ export default function AdminPanel() {
                     )}
                   </Box>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    {withdrawal.status === 'pending' && (
-                      <>
-                        <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveWithdrawal(withdrawal.id)}>
-                          {loading ? 'Approving...' : 'Approve'}
-                        </Button>
-                        <Button variant="contained" color="error" size="small" disabled={loading} onClick={() => handleRejectWithdrawal(withdrawal.id)}>
-                          {loading ? 'Rejecting...' : 'Reject'}
-                        </Button>
-                      </>
-                    )}
+                    {(() => {
+                      // Normalize status from possible fields and treat statuses case-insensitively
+                      const status = (withdrawal.status || withdrawal.state || (withdrawal.activity && withdrawal.activity.status) || '').toString().toLowerCase();
+                      const isFinal = ['approved', 'rejected', 'completed'].includes(status);
+                      if (isFinal) return null;
+                      // Prefer activity id when available
+                      const idToUse = withdrawal.id || withdrawal.activityId || (withdrawal.activity && (withdrawal.activity.id || withdrawal.activity.activityId));
+                      return (
+                        <>
+                          <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveWithdrawal(idToUse || withdrawal.id)}>
+                            {loading ? 'Approving...' : 'Approve'}
+                          </Button>
+                          <Button variant="contained" color="error" size="small" disabled={loading} onClick={() => handleRejectWithdrawal(idToUse || withdrawal.id)}>
+                            {loading ? 'Rejecting...' : 'Reject'}
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </Stack>
                 </CardContent>
               </Card>
