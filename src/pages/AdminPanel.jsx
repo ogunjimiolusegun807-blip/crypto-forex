@@ -732,8 +732,29 @@ export default function AdminPanel() {
       }
       // remove any matching items locally and refresh authoritative list
       try {
-        await refreshPendingWithdrawals(token);
+        // fetch authoritative list
+        const all = await userAPI.adminGetAllWithdrawals(token);
+        // build set of id candidates for matching
+        const idSet = new Set(idCandidates.map(String));
+        const filtered = (all || []).filter(w => {
+          const status = (w?.status || w?.state || (w.activity && w.activity.status) || '').toString().toLowerCase();
+          // drop final states
+          if (['approved','rejected','completed'].includes(status)) return false;
+          // drop if any id matches our candidates
+          if (idSet.has(String(w.id)) || idSet.has(String(w.activityId)) || (w.activity && idSet.has(String(w.activity.id)))) return false;
+          // if we have a user identifier, drop items for that user (best-effort)
+          const userIdCandidate = isObj && (payload.userId || payload.user?.id || payload.user?._id);
+          if (userIdCandidate) {
+            if (String(w.userId) === String(userIdCandidate) || String(w.user?.id) === String(userIdCandidate) || String(w.user?._id) === String(userIdCandidate)) return false;
+          }
+          // as last resort match by email if present
+          if (isObj && payload.email && w.email && String(w.email).toLowerCase() === String(payload.email).toLowerCase()) return false;
+          return true;
+        });
+        setWithdrawalRequests(filtered);
       } catch (e) {}
+      // refresh dashboard stats so counts update
+      try { await refreshStats(token); } catch (e) {}
       setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
@@ -797,7 +818,23 @@ export default function AdminPanel() {
           try { res = await userAPI.rejectWithdrawalByUser(userId, token); } catch (e) { res = null; }
         }
       }
-      try { await refreshPendingWithdrawals(token); } catch (e) {}
+      try {
+        const all = await userAPI.adminGetAllWithdrawals(token);
+        const idSet = new Set(idCandidates.map(String));
+        const filtered = (all || []).filter(w => {
+          const status = (w?.status || w?.state || (w.activity && w.activity.status) || '').toString().toLowerCase();
+          if (['approved','rejected','completed'].includes(status)) return false;
+          if (idSet.has(String(w.id)) || idSet.has(String(w.activityId)) || (w.activity && idSet.has(String(w.activity.id)))) return false;
+          const userIdCandidate = isObj && (payload.userId || payload.user?.id || payload.user?._id);
+          if (userIdCandidate) {
+            if (String(w.userId) === String(userIdCandidate) || String(w.user?.id) === String(userIdCandidate) || String(w.user?._id) === String(userIdCandidate)) return false;
+          }
+          if (isObj && payload.email && w.email && String(w.email).toLowerCase() === String(payload.email).toLowerCase()) return false;
+          return true;
+        });
+        setWithdrawalRequests(filtered);
+      } catch (e) {}
+      try { await refreshStats(token); } catch (e) {}
       setActionNotification({ open: true, type: 'info', message: 'Withdrawal rejected. User notified.' });
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
