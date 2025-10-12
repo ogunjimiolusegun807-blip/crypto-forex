@@ -47,30 +47,69 @@ export const UserProvider = ({ children }) => {
             let merged = { ...prev, ...updated };
             // If an activity object is provided, prepend it into transactions array
             if (updated.activity) {
-              let activity = updated.activity;
+              let activity = { ...updated.activity };
               // Normalize minimal fields for frontend display
               try {
-                activity = { ...activity };
                 if (!activity.date) activity.date = new Date().toISOString();
-                // If time not provided, create from date
                 if (!activity.time) activity.time = new Date(activity.date).toLocaleTimeString();
                 if (activity.amount !== undefined) activity.amount = Number(activity.amount);
                 if (!activity.status) activity.status = activity.approved ? 'completed' : 'pending';
                 if (!activity.description) activity.description = activity.type ? activity.type.replace(/_/g, ' ').toUpperCase() : 'Activity';
               } catch (e) { /* ignore normalization errors */ }
+
+              // Ensure activity has an id (create a temporary one for client-only activities)
+              if (!activity.id) {
+                activity.id = `tmp-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+                activity._isTemp = true;
+              }
+
+              // Ensure activity has a balance to display in AccountHistory
+              if (activity.balance === undefined) {
+                if (updated.balance !== undefined) {
+                  activity.balance = updated.balance;
+                } else if (prev.balance !== undefined && typeof activity.amount === 'number') {
+                  // best-effort estimation: previous balance + activity amount
+                  try {
+                    activity.balance = Number(prev.balance) + Number(activity.amount);
+                  } catch (e) {
+                    activity.balance = prev.balance;
+                  }
+                } else {
+                  activity.balance = prev.balance;
+                }
+              }
+
               // Normalize existing transactions array on user
               const existing = Array.isArray(prev.transactions)
                 ? prev.transactions.slice()
                 : Array.isArray(prev.activities)
                   ? prev.activities.slice()
                   : [];
-              // Avoid duplicate activity ids
-              const exists = existing.find(a => a.id === activity.id);
+
+              // Deduplicate: prefer matching ids, otherwise use composite key (amount+date+type)
+              const exists = existing.find(a => {
+                if (a && a.id && activity.id) return a.id === activity.id;
+                return a && a.amount === activity.amount && a.date === activity.date && a.type === activity.type;
+              });
+
               if (!exists) {
                 existing.unshift(activity);
+              } else {
+                // If the existing entry was a temporary client-side placeholder, replace it with server-provided activity
+                if (exists._isTemp && !activity._isTemp) {
+                  const idx = existing.findIndex(a => a.id === exists.id);
+                  if (idx !== -1) existing[idx] = activity;
+                }
               }
+
               merged = { ...merged, transactions: existing };
             }
+
+            // Ensure transactions array exists
+            if (!Array.isArray(merged.transactions)) {
+              merged.transactions = Array.isArray(merged.activities) ? merged.activities.slice() : [];
+            }
+
             localStorage.setItem('user', JSON.stringify(merged));
             return merged;
           });
