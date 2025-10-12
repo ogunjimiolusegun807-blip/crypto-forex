@@ -32,13 +32,13 @@ async function handleResponse(res) {
 }
 
 export const userAPI = {
-  register: async ({ username, email, password }) => {
+  register: async (payload) => {
     // Accept a generic payload object so callers can provide extended profile fields
-    const payload = arguments[0] || { username, email, password };
+    const body = payload || {};
     const res = await fetch(`${BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     });
     return await handleResponse(res);
   },
