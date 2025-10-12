@@ -71,91 +71,85 @@ function Register() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
       <Card sx={{ maxWidth: 1100, width: '100%', borderRadius: 3, boxShadow: 6, overflow: 'hidden' }}>
-        <Grid container>
-          <Grid item xs={12} md={5} sx={{ bgcolor: 'background.paper', p: { xs: 3, md: 6 }, display: { xs: 'none', md: 'block' } }}>
-            <Box sx={{ textAlign: 'center' }}>
-              <img src="/logo.png" alt="Logo" style={{ height: 84, marginBottom: 12 }} />
-              <Typography variant="h4" sx={{ fontWeight: 900, color: 'primary.main' }}>Sign Up for Free</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>It's Free to Sign up and only takes a minute.</Typography>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} md={7} sx={{ p: { xs: 3, md: 6 } }}>
-            <CardContent>
-              <form onSubmit={handleSubmit}>
-                <Grid container spacing={2} direction="column">
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Full Name" value={form.fullName} onChange={handleChange('fullName')} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Username" value={form.username} onChange={handleChange('username')} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Email" type="email" value={form.email} onChange={handleChange('email')} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Phone" value={form.phone} onChange={handleChange('phone')} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControl fullWidth>
-                      <InputLabel>Gender</InputLabel>
-                      <Select value={form.gender} label="Gender" onChange={handleChange('gender')}>
-                        <MenuItem value="">Select Gender</MenuItem>
-                        <MenuItem value="male">Male</MenuItem>
-                        <MenuItem value="female">Female</MenuItem>
-                        <MenuItem value="other">Other</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControl fullWidth>
-                      <InputLabel>Country</InputLabel>
-                      <Select value={form.country} label="Country" onChange={handleChange('country')}>
-                        <MenuItem value="">Select Country</MenuItem>
-                        {countries.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Password" type="password" value={form.password} onChange={handleChange('password')} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Confirm Password" type="password" value={form.confirmPassword} onChange={handleChange('confirmPassword')} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField fullWidth label="Enter Captcha" value={form.captcha} onChange={handleChange('captcha')} />
-                  </Grid>
-                  <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.05)', px: 2, py: 1, borderRadius: 1, ml: 1 }}>5F9C3E</Box>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControl fullWidth>
-                      <InputLabel>Account Type</InputLabel>
-                      <Select value={form.accountType} label="Account Type" onChange={handleChange('accountType')}>
-                        <MenuItem value="">Select Account Type</MenuItem>
-                        {accountTypes.map(a => <MenuItem key={a} value={a}>{a}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button variant="contained" color="primary" fullWidth size="large" type="submit" disabled={loading} sx={{ borderRadius: 6 }}>
-                      {loading ? 'Registering...' : 'Register'}
-                    </Button>
-                  </Grid>
-                  {error && (
-                    <Grid item xs={12}><Typography color="error" sx={{ mt: 1 }}>{error}</Typography></Grid>
-                  )}
-                  {success && (
-                    <Grid item xs={12}><Typography color="primary" sx={{ mt: 1 }}>{success}</Typography></Grid>
-                  )}
-                  <Grid item xs={12}>
-                    <Typography sx={{ mt: 2, textAlign: 'center' }}>Already have an account? <Link to="/login">Login</Link></Typography>
-                  </Grid>
-                </Grid>
-              </form>
-            </CardContent>
-          </Grid>
-        </Grid>
+        <Box sx={{ width: '100%', textAlign: 'center', pt: 5, pb: 2, bgcolor: 'background.paper' }}>
+          <img src="/logo.png" alt="Logo" style={{ height: 84, marginBottom: 10 }} />
+          <Typography variant="h4" sx={{ fontWeight: 900, color: 'primary.main', mb: 1 }}>Welcome to Elon Investment</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'success.main', mb: 1 }}>Sign Up for Free</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>It's Free to Sign up and only takes a minute.</Typography>
+        </Box>
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField fullWidth label="Full Name" value={form.fullName} onChange={handleChange('fullName')} />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField fullWidth label="Username" value={form.username} onChange={handleChange('username')} />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField fullWidth label="Email" type="email" value={form.email} onChange={handleChange('email')} />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField fullWidth label="Phone" value={form.phone} onChange={handleChange('phone')} />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Gender</InputLabel>
+                  <Select value={form.gender} label="Gender" onChange={handleChange('gender')}>
+                    <MenuItem value="">Select Gender</MenuItem>
+                    <MenuItem value="male">Male</MenuItem>
+                    <MenuItem value="female">Female</MenuItem>
+                    <MenuItem value="other">Other</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Country</InputLabel>
+                  <Select value={form.country} label="Country" onChange={handleChange('country')}>
+                    <MenuItem value="">Select Country</MenuItem>
+                    {countries.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField fullWidth label="Password" type="password" value={form.password} onChange={handleChange('password')} />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField fullWidth label="Confirm Password" type="password" value={form.confirmPassword} onChange={handleChange('confirmPassword')} />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField fullWidth label="Enter Captcha" value={form.captcha} onChange={handleChange('captcha')} />
+              </Grid>
+              <Grid item xs={12} md={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ bgcolor: 'rgba(0,0,0,0.05)', px: 2, py: 1, borderRadius: 1, ml: 1, width: '100%', textAlign: 'center' }}>5F9C3E</Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Account Type</InputLabel>
+                  <Select value={form.accountType} label="Account Type" onChange={handleChange('accountType')}>
+                    <MenuItem value="">Select Account Type</MenuItem>
+                    {accountTypes.map(a => <MenuItem key={a} value={a}>{a}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <Button variant="contained" color="primary" fullWidth size="large" type="submit" disabled={loading} sx={{ borderRadius: 6 }}>
+                  {loading ? 'Registering...' : 'Register'}
+                </Button>
+              </Grid>
+              {error && (
+                <Grid item xs={12}><Typography color="error" sx={{ mt: 1 }}>{error}</Typography></Grid>
+              )}
+              {success && (
+                <Grid item xs={12}><Typography color="primary" sx={{ mt: 1 }}>{success}</Typography></Grid>
+              )}
+              <Grid item xs={12}>
+                <Typography sx={{ mt: 2, textAlign: 'center' }}>Already have an account? <Link to="/login">Login</Link></Typography>
+              </Grid>
+            </Grid>
+          </form>
+        </CardContent>
       </Card>
     </Box>
   );
