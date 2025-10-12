@@ -422,7 +422,6 @@ export default function AdminPanel() {
                     {(() => {
                       const status = (deposit.status || '').toString().toLowerCase();
                       const actionable = status !== 'approved' && status !== 'rejected';
-                      const hasId = !!(deposit.id || deposit.activityId);
                       if (!actionable) return null;
                       return (
                         <>
@@ -430,7 +429,7 @@ export default function AdminPanel() {
                             variant="contained"
                             color="success"
                             size="small"
-                            disabled={loading || !hasId}
+                            disabled={loading}
                             onClick={() => { setCreditingDeposit(deposit); setCreditAmount(deposit.amount || ''); setCreditDialogOpen(true); }}
                           >
                             {loading ? 'Approving...' : 'Credit'}
@@ -439,17 +438,27 @@ export default function AdminPanel() {
                             variant="contained"
                             color="error"
                             size="small"
-                            disabled={loading || !hasId}
+                            disabled={loading}
                             onClick={async () => {
                               const token = localStorage.getItem('adminToken');
+                              setLoading(true);
                               try {
                                 const idToUse = deposit.id || deposit.activityId;
-                                await userAPI.rejectDeposit(idToUse, token);
-                                setDepositRequests(prev => prev.map(d => (d.id === idToUse || d.activityId === idToUse) ? { ...d, status: 'rejected' } : d));
+                                if (idToUse) {
+                                  await userAPI.rejectDeposit(idToUse, token);
+                                  setDepositRequests(prev => prev.map(d => (d.id === idToUse || d.activityId === idToUse) ? { ...d, status: 'rejected' } : d));
+                                } else {
+                                  // fallback: try reject by userId when activity id missing
+                                  const userId = deposit.userId || deposit.user?.id || deposit.userId;
+                                  if (!userId) throw new Error('No id available to reject deposit');
+                                  await userAPI.rejectDepositByUser(userId, token);
+                                  setDepositRequests(prev => prev.map(d => (d.userId === userId ? { ...d, status: 'rejected' } : d)));
+                                }
                                 setActionNotification({ open: true, type: 'info', message: 'Deposit rejected.' });
                               } catch (err) {
                                 setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject deposit.' });
                               }
+                              setLoading(false);
                             }}
                           >
                             {loading ? 'Rejecting...' : 'Reject'}
