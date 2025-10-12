@@ -110,6 +110,23 @@ export default function AccountSettings() {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Rehydrate form when user object changes (e.g., after login/registration)
+  useEffect(() => {
+    if (user) {
+      setFormData(f => ({
+        ...f,
+        fullName: user.fullName || '',
+        username: user.username || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        country: user.country || '',
+        state: user.state || '',
+        zipCode: user.zipCode || '',
+        address: user.address || ''
+      }));
+    }
+  }, [user]);
   const [accountSettings, setAccountSettings] = useState({
     emailNotifications: true,
     smsNotifications: false,

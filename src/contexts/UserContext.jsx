@@ -198,15 +198,23 @@ export const UserProvider = ({ children }) => {
       setError(null);
       const response = await userAPI.login(credentials);
       
-      if (response.success) {
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-        await loadUserData(); // Load complete user data after login
-        return response.data.user;
-      } else {
-        // Handle fallback response
+      if (response) {
+        // If server returned a token, persist it for subsequent requests
+        const token = response.token || (response.data && response.data.token) || null;
+        if (token) {
+          try { localStorage.setItem('authToken', token); } catch (e) {}
+        }
+
+        if (response.success || response.data) {
+          const userObj = (response.data && response.data.user) || response.user || response;
+          setUser(userObj);
+          setIsAuthenticated(true);
+          await loadUserData(); // refresh full profile from backend
+          return userObj;
+        }
+        // fallback: still set user if returned
         setUser(response);
-        setIsAuthenticated(true);
+        setIsAuthenticated(!!token);
         return response;
       }
     } catch (err) {
