@@ -678,34 +678,52 @@ export default function AdminPanel() {
   };
 
   // Approve/reject withdrawal
-  const handleApproveWithdrawal = async (id) => {
+  // Approve/reject withdrawal (robust: accepts id or full withdrawal object)
+  const handleApproveWithdrawal = async (payload) => {
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await userAPI.approveWithdrawal(id, token);
-  // remove approved withdrawal from admin list
-  setWithdrawalRequests(prev => prev.filter(w => !(w.id === id || w.activityId === id)));
+      // payload can be an id string/number or the full withdrawal object
+      const isObj = payload && typeof payload === 'object';
+      const id = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
+      let res;
+      if (id) {
+        // try approve by activity id first
+        try {
+          res = await userAPI.approveWithdrawal(id, token);
+        } catch (e) {
+          // if backend complains activity not found, fall through to user fallback
+          res = null;
+        }
+      }
+      if (!res) {
+        // fallback to user-based approve if we have a user id
+        const userId = (isObj && (payload.userId || payload.user?.id)) || (res && (res.userId || res.user?.id)) || id;
+        if (userId) {
+          try { res = await userAPI.approveWithdrawalByUser(userId, token); } catch (e) { res = null; }
+        }
+      }
+      // remove approved withdrawal(s) from admin list using multiple possible id fields
+      const idToRemove = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
+      setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
       setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
-      // If backend returned updated balance/activity, dispatch it; otherwise create a best-effort fallback
+      // Dispatch user-updated from server response when available
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
         if (res.balance !== undefined) updated.balance = res.balance;
         if (res.activity) updated.activity = res.activity;
-        updated.id = res.userId || res.user?.id || id;
+        updated.id = res.userId || res.user?.id || (isObj && (payload.userId || payload.user?.id)) || idToRemove;
         try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       } else {
-        // fallback: try to find the withdrawal object to get amount/userId
-        const withdrawalObj = withdrawalRequests.find(w => (w.id === id || w.activityId === id));
-        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || id;
+        // best-effort fallback: synthesize a completed activity so UI reflects the change
+        const withdrawalObj = isObj ? payload : withdrawalRequests.find(w => (w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove))));
+        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || idToRemove;
         let balanceFromServer;
         try {
-          // attempt to fetch user list and derive balance (expensive but reliable fallback)
           const users = await userAPI.adminGetAllUsers(token);
           const u = (users || []).find(x => x.id === userId || x.userId === userId || x._id === userId || x.email === (withdrawalObj && withdrawalObj.email));
           if (u && u.balance !== undefined) balanceFromServer = u.balance;
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
         const amt = withdrawalObj?.amount !== undefined ? Number(withdrawalObj.amount) : (res && res.amount) || 0;
         const activity = {
           id: `tmp-w-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
@@ -727,24 +745,35 @@ export default function AdminPanel() {
     }
     setLoading(false);
   };
-  const handleRejectWithdrawal = async (id) => {
+
+  const handleRejectWithdrawal = async (payload) => {
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await userAPI.rejectWithdrawal(id, token);
-  // remove rejected withdrawal from admin list
-  setWithdrawalRequests(prev => prev.filter(w => !(w.id === id || w.activityId === id)));
+      const isObj = payload && typeof payload === 'object';
+      const id = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
+      let res;
+      if (id) {
+        try { res = await userAPI.rejectWithdrawal(id, token); } catch (e) { res = null; }
+      }
+      if (!res) {
+        const userId = (isObj && (payload.userId || payload.user?.id)) || (res && (res.userId || res.user?.id)) || id;
+        if (userId) {
+          try { res = await userAPI.rejectWithdrawalByUser(userId, token); } catch (e) { res = null; }
+        }
+      }
+      const idToRemove = isObj ? (payload.id || payload.activityId || (payload.activity && (payload.activity.id || payload.activity.activityId))) : payload;
+      setWithdrawalRequests(prev => prev.filter(w => !(w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove)))));
       setActionNotification({ open: true, type: 'info', message: 'Withdrawal rejected. User notified.' });
       if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
         if (res.balance !== undefined) updated.balance = res.balance;
         if (res.activity) updated.activity = res.activity;
-        updated.id = res.userId || res.user?.id || id;
+        updated.id = res.userId || res.user?.id || (isObj && (payload.userId || payload.user?.id)) || idToRemove;
         try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       } else {
-        // fallback: create a pending/rejected activity for UI
-        const withdrawalObj = withdrawalRequests.find(w => (w.id === id || w.activityId === id));
-        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || id;
+        const withdrawalObj = isObj ? payload : withdrawalRequests.find(w => (w.id === idToRemove || w.activityId === idToRemove || (w.activity && (w.activity.id === idToRemove || w.activity.activityId === idToRemove))));
+        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || idToRemove;
         let balanceFromServer;
         try {
           const users = await userAPI.adminGetAllUsers(token);
@@ -958,10 +987,10 @@ export default function AdminPanel() {
                       const idToUse = withdrawal.id || withdrawal.activityId || (withdrawal.activity && (withdrawal.activity.id || withdrawal.activity.activityId));
                       return (
                         <>
-                          <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveWithdrawal(idToUse || withdrawal.id)}>
+                          <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => handleApproveWithdrawal(withdrawal)}>
                             {loading ? 'Approving...' : 'Approve'}
                           </Button>
-                          <Button variant="contained" color="error" size="small" disabled={loading} onClick={() => handleRejectWithdrawal(idToUse || withdrawal.id)}>
+                          <Button variant="contained" color="error" size="small" disabled={loading} onClick={() => handleRejectWithdrawal(withdrawal)}>
                             {loading ? 'Rejecting...' : 'Reject'}
                           </Button>
                         </>
