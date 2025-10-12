@@ -408,25 +408,44 @@ export default function AdminPanel() {
                     })()}
                   </Box>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    {deposit.status === 'pending' && (
-                      <>
-                        <Button variant="contained" color="success" size="small" disabled={loading} onClick={() => { setCreditingDeposit(deposit); setCreditAmount(deposit.amount || ''); setCreditDialogOpen(true); }}>
-                          {loading ? 'Approving...' : 'Credit'}
-                        </Button>
-                        <Button variant="contained" color="error" size="small" disabled={loading} onClick={async () => {
-                          const token = localStorage.getItem('adminToken');
-                          try {
-                            await userAPI.rejectDeposit(deposit.id, token);
-                            setDepositRequests(prev => prev.map(d => d.id === deposit.id ? { ...d, status: 'rejected' } : d));
-                            setActionNotification({ open: true, type: 'info', message: 'Deposit rejected.' });
-                          } catch (err) {
-                            setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject deposit.' });
-                          }
-                        }}>
-                          {loading ? 'Rejecting...' : 'Reject'}
-                        </Button>
-                      </>
-                    )}
+                    {(() => {
+                      const status = (deposit.status || '').toString().toLowerCase();
+                      const actionable = status !== 'approved' && status !== 'rejected';
+                      const hasId = !!(deposit.id || deposit.activityId);
+                      if (!actionable) return null;
+                      return (
+                        <>
+                          <Button
+                            variant="contained"
+                            color="success"
+                            size="small"
+                            disabled={loading || !hasId}
+                            onClick={() => { setCreditingDeposit(deposit); setCreditAmount(deposit.amount || ''); setCreditDialogOpen(true); }}
+                          >
+                            {loading ? 'Approving...' : 'Credit'}
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="error"
+                            size="small"
+                            disabled={loading || !hasId}
+                            onClick={async () => {
+                              const token = localStorage.getItem('adminToken');
+                              try {
+                                const idToUse = deposit.id || deposit.activityId;
+                                await userAPI.rejectDeposit(idToUse, token);
+                                setDepositRequests(prev => prev.map(d => (d.id === idToUse || d.activityId === idToUse) ? { ...d, status: 'rejected' } : d));
+                                setActionNotification({ open: true, type: 'info', message: 'Deposit rejected.' });
+                              } catch (err) {
+                                setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject deposit.' });
+                              }
+                            }}
+                          >
+                            {loading ? 'Rejecting...' : 'Reject'}
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </Stack>
                 </CardContent>
               </Card>
