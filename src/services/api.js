@@ -188,9 +188,9 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
-  // Public plans list for buyers
+  // Public plans list for buyers (profileroutes mounts under /api/user)
   getPublicPlans: async () => {
-    const res = await fetch(`${BASE_URL}/api/plans/public`);
+    const res = await fetch(`${BASE_URL}/api/user/plans/public`);
     return await handleResponse(res);
   },
   adminGetAllSignals: async (token) => {
