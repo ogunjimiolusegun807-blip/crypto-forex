@@ -199,6 +199,29 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  adminCreateSignal: async (signal, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/signals`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(signal)
+    });
+    return await handleResponse(res);
+  },
+  adminUpdateSignal: async (signalId, signal, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/signals/${signalId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(signal)
+    });
+    return await handleResponse(res);
+  },
+  adminDeleteSignal: async (signalId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/signals/${signalId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
   adminGetAllDeposits: async (token) => {
     const res = await fetch(`${BASE_URL}/api/admin/deposits`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -310,7 +333,7 @@ export const userAPI = {
   },
   subscribeSignal: async (signalId, token, price) => {
     const body = { signalId };
-    if (price) body.price = price;
+    if (price) body.price = Number(price);
     const res = await fetch(`${BASE_URL}/api/user/signal/subscribe`, {
       method: 'POST',
       headers: {
@@ -319,6 +342,11 @@ export const userAPI = {
       },
       body: JSON.stringify(body)
     });
+    return await handleResponse(res);
+  },
+  // Public signals for buyer-facing listings
+  getPublicSignals: async () => {
+    const res = await fetch(`${BASE_URL}/api/user/signals/public`);
     return await handleResponse(res);
   },
   getSignals: async (token) => {

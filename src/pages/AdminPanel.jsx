@@ -157,6 +157,9 @@ export default function AdminPanel() {
   // Signals tab
   const [signals, setSignals] = useState([]);
   const [signalsLoading, setSignalsLoading] = useState(false);
+  const [signalDialogOpen, setSignalDialogOpen] = useState(false);
+  const [editingSignal, setEditingSignal] = useState(null);
+  const [signalSaving, setSignalSaving] = useState(false);
   // Users tab
   const [usersLoading, setUsersLoading] = useState(false);
 
@@ -332,8 +335,17 @@ export default function AdminPanel() {
                     Badge: {signal.badge}
                   </Typography>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <Button variant="contained" color="primary" size="small">Edit</Button>
-                    <Button variant="contained" color="error" size="small">Delete</Button>
+                    <Button variant="contained" color="primary" size="small" onClick={() => { setEditingSignal(signal); setSignalDialogOpen(true); }}>Edit</Button>
+                    <Button variant="contained" color="error" size="small" onClick={async () => {
+                      const token = localStorage.getItem('adminToken');
+                      try {
+                        await userAPI.adminDeleteSignal(signal.id, token);
+                        setSignals(prev => prev.filter(s => s.id !== signal.id));
+                        setActionNotification({ open: true, type: 'success', message: 'Signal deleted.' });
+                      } catch (e) {
+                        setActionNotification({ open: true, type: 'error', message: e.message || 'Delete failed.' });
+                      }
+                    }}>Delete</Button>
                   </Stack>
                 </CardContent>
               </Card>
@@ -342,8 +354,48 @@ export default function AdminPanel() {
         </Grid>
       )}
       <Box sx={{ mt: 4 }}>
-        <Button variant="contained" color="success">Add New Signal</Button>
+        <Button variant="contained" color="success" onClick={() => { setEditingSignal({ name: '', price: 0, description: '', features: [], accuracy: '', subscribers: '0', badge: '', badgeColor: '', color: '#ffffff' }); setSignalDialogOpen(true); }}>Add New Signal</Button>
       </Box>
+
+      {/* Signal create/edit dialog */}
+      <Dialog open={signalDialogOpen} onClose={() => { setSignalDialogOpen(false); setEditingSignal(null); }} maxWidth="sm" fullWidth>
+        <DialogContent>
+          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>{editingSignal && editingSignal.id ? 'Edit Signal' : 'Create Signal'}</Typography>
+          <TextField fullWidth label="Name" sx={{ mb: 2 }} value={editingSignal?.name || ''} onChange={e => setEditingSignal(s => ({ ...s, name: e.target.value }))} />
+          <TextField fullWidth label="Price" sx={{ mb: 2 }} value={editingSignal?.price || 0} onChange={e => setEditingSignal(s => ({ ...s, price: Number(e.target.value) }))} />
+          <TextField fullWidth label="Description" sx={{ mb: 2 }} value={editingSignal?.description || ''} onChange={e => setEditingSignal(s => ({ ...s, description: e.target.value }))} />
+          <TextField fullWidth label="Features (one per line)" multiline rows={4} value={(editingSignal?.features || []).join('\n')} onChange={e => setEditingSignal(s => ({ ...s, features: e.target.value.split('\n').map(x => x.trim()).filter(Boolean) }))} sx={{ mb: 2 }} />
+          <TextField fullWidth label="Accuracy" sx={{ mb: 2 }} value={editingSignal?.accuracy || ''} onChange={e => setEditingSignal(s => ({ ...s, accuracy: e.target.value }))} />
+          <TextField fullWidth label="Subscribers" sx={{ mb: 2 }} value={editingSignal?.subscribers || ''} onChange={e => setEditingSignal(s => ({ ...s, subscribers: e.target.value }))} />
+          <TextField fullWidth label="Badge" sx={{ mb: 2 }} value={editingSignal?.badge || ''} onChange={e => setEditingSignal(s => ({ ...s, badge: e.target.value }))} />
+          <TextField fullWidth label="Badge Color" sx={{ mb: 2 }} value={editingSignal?.badgeColor || ''} onChange={e => setEditingSignal(s => ({ ...s, badgeColor: e.target.value }))} />
+          <TextField fullWidth label="Color" sx={{ mb: 2 }} value={editingSignal?.color || ''} onChange={e => setEditingSignal(s => ({ ...s, color: e.target.value }))} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setSignalDialogOpen(false); setEditingSignal(null); }} color="inherit">Cancel</Button>
+          <Button variant="contained" color="primary" onClick={async () => {
+            if (!editingSignal) return;
+            setSignalSaving(true);
+            const token = localStorage.getItem('adminToken');
+            try {
+              if (editingSignal.id) {
+                const updated = await userAPI.adminUpdateSignal(editingSignal.id, editingSignal, token);
+                setSignals(prev => prev.map(s => s.id === updated.id ? updated : s));
+                setActionNotification({ open: true, type: 'success', message: 'Signal updated.' });
+              } else {
+                const created = await userAPI.adminCreateSignal(editingSignal, token);
+                setSignals(prev => [created, ...prev]);
+                setActionNotification({ open: true, type: 'success', message: 'Signal created.' });
+              }
+              setSignalDialogOpen(false);
+              setEditingSignal(null);
+            } catch (e) {
+              setActionNotification({ open: true, type: 'error', message: e.message || 'Save failed.' });
+            }
+            setSignalSaving(false);
+          }} disabled={signalSaving}>{signalSaving ? 'Saving...' : 'Save'}</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
   const renderKYC = () => {

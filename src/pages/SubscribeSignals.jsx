@@ -231,6 +231,7 @@ export default function SubscribeSignals() {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [subscribeDialog, setSubscribeDialog] = useState(false);
+  const [publicSignals, setPublicSignals] = useState([]);
   // Use real balance from user context
   const accountBalance = Number(user?.balance || 0);
   const [confirming, setConfirming] = useState(false);
@@ -251,6 +252,18 @@ export default function SubscribeSignals() {
     };
     fetchSignals();
   }, [user]);
+  // Fetch public signals for display (backend-driven) and fall back to local list
+  useEffect(() => {
+    const fetchPublic = async () => {
+      try {
+        const res = await userAPI.getPublicSignals();
+        setPublicSignals(res.signals || []);
+      } catch (e) {
+        setPublicSignals(signalPlans);
+      }
+    };
+    fetchPublic();
+  }, []);
   const handleSubscribeSignal = async (plan) => {
     setSelectedPlan(plan);
     setSubscribeDialog(true);
@@ -259,13 +272,14 @@ export default function SubscribeSignals() {
   const handleConfirmSubscribe = async () => {
     try {
       // Check balance before subscribing
-      if (accountBalance < selectedPlan.price) {
+      const price = Number(selectedPlan.price || 0);
+      if (accountBalance < price) {
         setSnackbar({ open: true, message: `Insufficient balance. Please deposit $${(selectedPlan.price - accountBalance).toFixed(2)} and try again.`, severity: 'error' });
         return;
       }
       setConfirming(true);
       const token = localStorage.getItem('authToken');
-  const res = await userAPI.subscribeSignal(selectedPlan.id, token, selectedPlan.price);
+  const res = await userAPI.subscribeSignal(selectedPlan.id, token, price);
       if (res && res.success) {
         const updated = { id: user.id, balance: res.balance };
         if (res.activity) updated.activity = res.activity;
@@ -455,7 +469,7 @@ export default function SubscribeSignals() {
 
         {/* Signal Plans Grid */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {signalPlans.map((plan) => (
+          {(publicSignals.length ? publicSignals : signalPlans).map((plan) => (
             <Grid item xs={12} sm={6} lg={3} key={plan.id}>
               <Card sx={{ 
                 height: '100%',
