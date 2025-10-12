@@ -42,22 +42,20 @@ export default function Login() {
   };
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-      <Grid container spacing={4} sx={{ width: '100%', maxWidth: 1200 }} alignItems="center" justifyContent="center">
-        {/* Left: hero / brand (desktop) */}
-        <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
-          <Box sx={{ height: '70vh', borderRadius: 3, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.paper', boxShadow: 3 }}>
-            <Box sx={{ textAlign: 'center', px: 6 }}>
-              <img src="/logo.png" alt="Logo" style={{ height: 84, marginBottom: 12 }} />
-              <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: 1.2 }}>INTERSPACE</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>BROKER</Typography>
-              <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary', maxWidth: 420, mx: 'auto' }}>Securely trade crypto, forex and stocks with institutional grade tools and fast execution.</Typography>
-            </Box>
+      <Grid container spacing={0} sx={{ width: '100%', maxWidth: 900, minHeight: { xs: '100vh', sm: '80vh', md: '80vh' }, boxShadow: { md: 6 }, borderRadius: { md: 4 }, overflow: 'hidden', bgcolor: 'background.paper' }} alignItems="stretch" justifyContent="center">
+        {/* Left: hero / brand (tablet & desktop) */}
+        <Grid item xs={12} sm={5} md={5} sx={{ display: { xs: 'none', sm: 'block' }, bgcolor: 'background.paper', p: { sm: 4, md: 6 }, borderRight: { sm: '1px solid #222' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <Box sx={{ width: '100%', textAlign: 'center' }}>
+            <img src="/logo.png" alt="Logo" style={{ height: 72, marginBottom: 16 }} />
+            <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: 1.2, fontSize: { sm: '2rem', md: '2.5rem' } }}>INTERSPACE</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { sm: '1.1rem', md: '1.3rem' } }}>BROKER</Typography>
+            <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary', maxWidth: 320, mx: 'auto', fontSize: { sm: '0.95rem', md: '1rem' } }}>Securely trade crypto, forex and stocks with institutional grade tools and fast execution.</Typography>
           </Box>
         </Grid>
 
         {/* Right: form */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ p: { xs: 3, sm: 4 }, borderRadius: 3, boxShadow: 6, maxWidth: 520, mx: { xs: 'auto', md: 0 }, bgcolor: 'background.paper' }}>
+        <Grid item xs={12} sm={7} md={7} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, sm: 4, md: 6 } }}>
+          <Card sx={{ width: '100%', maxWidth: 400, mx: 'auto', p: { xs: 3, sm: 4 }, borderRadius: 3, boxShadow: { xs: 3, sm: 6 }, bgcolor: 'background.paper' }}>
             <form onSubmit={handleLogin}>
               <Box sx={{ textAlign: { xs: 'center', md: 'left' }, mb: 2 }}>
                 <img src="/logo.png" alt="Logo" style={{ height: 56, marginBottom: 8 }} />
