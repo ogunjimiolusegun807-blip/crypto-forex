@@ -395,14 +395,41 @@ export default function AdminPanel() {
       const res = await userAPI.approveWithdrawal(id, token);
       setWithdrawalRequests(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' } : w));
       setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
-      if (res) {
+      // If backend returned updated balance/activity, dispatch it; otherwise create a best-effort fallback
+      if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
         if (res.balance !== undefined) updated.balance = res.balance;
         if (res.activity) updated.activity = res.activity;
-        if (Object.keys(updated).length) {
-          updated.id = res.userId || res.user?.id || id;
-          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+        updated.id = res.userId || res.user?.id || id;
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+      } else {
+        // fallback: try to find the withdrawal object to get amount/userId
+        const withdrawalObj = withdrawalRequests.find(w => (w.id === id || w.activityId === id));
+        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || id;
+        let balanceFromServer;
+        try {
+          // attempt to fetch user list and derive balance (expensive but reliable fallback)
+          const users = await userAPI.adminGetAllUsers(token);
+          const u = (users || []).find(x => x.id === userId || x.userId === userId || x._id === userId || x.email === (withdrawalObj && withdrawalObj.email));
+          if (u && u.balance !== undefined) balanceFromServer = u.balance;
+        } catch (e) {
+          // ignore
         }
+        const amt = withdrawalObj?.amount !== undefined ? Number(withdrawalObj.amount) : (res && res.amount) || 0;
+        const activity = {
+          id: `tmp-w-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+          type: 'withdrawal',
+          amount: -(Number(amt) || 0),
+          status: 'completed',
+          description: 'Withdrawal approved by admin',
+          date: new Date().toISOString(),
+          time: new Date().toLocaleTimeString(),
+          balance: balanceFromServer !== undefined ? balanceFromServer : undefined,
+          _isTemp: true
+        };
+        const updated = { id: userId, activity };
+        if (balanceFromServer !== undefined) updated.balance = balanceFromServer;
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       }
     } catch (err) {
       setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve withdrawal.' });
@@ -416,14 +443,37 @@ export default function AdminPanel() {
       const res = await userAPI.rejectWithdrawal(id, token);
       setWithdrawalRequests(prev => prev.map(w => w.id === id ? { ...w, status: 'rejected' } : w));
       setActionNotification({ open: true, type: 'info', message: 'Withdrawal rejected. User notified.' });
-      if (res) {
+      if (res && (res.balance !== undefined || res.activity)) {
         const updated = {};
         if (res.balance !== undefined) updated.balance = res.balance;
         if (res.activity) updated.activity = res.activity;
-        if (Object.keys(updated).length) {
-          updated.id = res.userId || res.user?.id || id;
-          try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
-        }
+        updated.id = res.userId || res.user?.id || id;
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
+      } else {
+        // fallback: create a pending/rejected activity for UI
+        const withdrawalObj = withdrawalRequests.find(w => (w.id === id || w.activityId === id));
+        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || id;
+        let balanceFromServer;
+        try {
+          const users = await userAPI.adminGetAllUsers(token);
+          const u = (users || []).find(x => x.id === userId || x.userId === userId || x._id === userId || x.email === (withdrawalObj && withdrawalObj.email));
+          if (u && u.balance !== undefined) balanceFromServer = u.balance;
+        } catch (e) {}
+        const amt = withdrawalObj?.amount !== undefined ? Number(withdrawalObj.amount) : (res && res.amount) || 0;
+        const activity = {
+          id: `tmp-w-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+          type: 'withdrawal',
+          amount: -(Number(amt) || 0),
+          status: 'rejected',
+          description: 'Withdrawal rejected by admin',
+          date: new Date().toISOString(),
+          time: new Date().toLocaleTimeString(),
+          balance: balanceFromServer !== undefined ? balanceFromServer : undefined,
+          _isTemp: true
+        };
+        const updated = { id: userId, activity };
+        if (balanceFromServer !== undefined) updated.balance = balanceFromServer;
+        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
       }
     } catch (err) {
       setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject withdrawal.' });
