@@ -26,6 +26,11 @@ export default function AdminPanel() {
   const [previewImage, setPreviewImage] = useState(null);
   // Helper to derive activity id from various possible shapes
   const getActivityId = (kyc) => kyc?.activityId || kyc?.id || (kyc?.activity && (kyc.activity.id || kyc.activity.activityId)) || null;
+  // helper to normalize status and detect completed states
+  const isCompletedKycStatus = (k) => {
+    const status = (k?.kycStatus || k?.status || (k.activity && k.activity.status) || '').toString().toLowerCase();
+    return ['verified', 'approved', 'rejected', 'completed'].includes(status);
+  };
   // Deposit state
   const [depositRequests, setDepositRequests] = useState([]);
   const [depositLoading, setDepositLoading] = useState(false);
@@ -49,8 +54,9 @@ export default function AdminPanel() {
       userAPI.adminGetAllWithdrawals(token)
     ])
       .then(([kycData, depositData, withdrawalData]) => {
-        // API now returns an array of { activityId, userId, username, email, kycStatus, kycData }
-        setKycRequests(kycData);
+        // API may return processed items; only keep pending/unhandled KYC items for admin UI
+        const pendingKyc = (kycData || []).filter(k => !isCompletedKycStatus(k));
+        setKycRequests(pendingKyc);
         setDepositRequests(depositData);
         setWithdrawalRequests(withdrawalData);
       })
@@ -61,6 +67,17 @@ export default function AdminPanel() {
         setWithdrawalLoading(false);
       });
   }, []);
+
+  // refresh pending KYC helper (keeps UI in sync with backend after actions)
+  const refreshPendingKYC = async (token) => {
+    try {
+      const kycData = await userAPI.adminGetAllKYC(token);
+      setKycRequests((kycData || []).filter(k => !isCompletedKycStatus(k)));
+    } catch (e) {
+      // non-fatal; keep UI as-is and notify admin
+      setActionNotification({ open: true, type: 'error', message: 'Failed to refresh KYC list.' });
+    }
+  };
 
   // Approve/reject KYC
   const handleApproveKYC = async (activityId) => {
@@ -74,7 +91,9 @@ export default function AdminPanel() {
     try {
   const res = await userAPI.approveKYC(activityId, token);
   // remove the handled KYC request from the admin queue so it doesn't reappear
-  setKycRequests(prev => prev.filter(k => getActivityId(k) !== activityId));
+      setKycRequests(prev => prev.filter(k => getActivityId(k) !== activityId));
+      // refresh from server to ensure persistence and multi-admin consistency
+      await refreshPendingKYC(token);
       setActionNotification({ open: true, type: 'success', message: 'KYC approved and user account activated.' });
       if (res) {
         const updated = {};
@@ -100,7 +119,9 @@ export default function AdminPanel() {
     try {
   const res = await userAPI.rejectKYC(activityId, token);
   // remove rejected request from admin queue
-  setKycRequests(prev => prev.filter(k => getActivityId(k) !== activityId));
+      setKycRequests(prev => prev.filter(k => getActivityId(k) !== activityId));
+      // keep UI in sync with backend
+      await refreshPendingKYC(token);
       setActionNotification({ open: true, type: 'info', message: 'KYC rejected. User notified.' });
       if (res) {
         const updated = {};
@@ -330,8 +351,7 @@ export default function AdminPanel() {
                                   setLoading(true);
                                   try {
                                     await userAPI.approveKYCByUser(userId, token);
-                                    // remove the KYC card for this user so admin sees only pending/new items
-                                    setKycRequests(prev => prev.filter(k => !(k.userId === userId || k.user?.id === userId || getActivityId(k) === userId)));
+                                    await refreshPendingKYC(token);
                                     setActionNotification({ open: true, type: 'success', message: 'KYC approved by user id.' });
                                   } catch (err) {
                                     setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve by user.' });
@@ -356,9 +376,8 @@ export default function AdminPanel() {
                                   setLoading(true);
                                   try {
                                     await userAPI.rejectKYCByUser(userId, token);
-                                      // remove the rejected KYC card so admin can focus on remaining submissions
-                                      setKycRequests(prev => prev.filter(k => !(k.userId === userId || k.user?.id === userId || getActivityId(k) === userId)));
-                                    setActionNotification({ open: true, type: 'info', message: 'KYC rejected by user id.' });
+                                      await refreshPendingKYC(token);
+                                      setActionNotification({ open: true, type: 'info', message: 'KYC rejected by user id.' });
                                   } catch (err) {
                                     setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reject by user.' });
                                   }
