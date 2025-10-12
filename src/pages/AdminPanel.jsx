@@ -22,6 +22,7 @@ export default function AdminPanel() {
   // KYC state
   const [kycRequests, setKycRequests] = useState([]);
   const [kycLoading, setKycLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   // Deposit state
   const [depositRequests, setDepositRequests] = useState([]);
   const [depositLoading, setDepositLoading] = useState(false);
@@ -42,6 +43,7 @@ export default function AdminPanel() {
       userAPI.adminGetAllWithdrawals(token)
     ])
       .then(([kycData, depositData, withdrawalData]) => {
+        // API now returns an array of { activityId, userId, username, email, kycStatus, kycData }
         setKycRequests(kycData);
         setDepositRequests(depositData);
         setWithdrawalRequests(withdrawalData);
@@ -55,24 +57,24 @@ export default function AdminPanel() {
   }, []);
 
   // Approve/reject KYC
-  const handleApproveKYC = async (id) => {
+  const handleApproveKYC = async (activityId) => {
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
-      await userAPI.approveKYC(id, token);
-      setKycRequests(prev => prev.map(k => k.id === id ? { ...k, kycStatus: 'verified' } : k));
+      await userAPI.approveKYC(activityId, token);
+      setKycRequests(prev => prev.map(k => k.activityId === activityId ? { ...k, kycStatus: 'verified' } : k));
       setActionNotification({ open: true, type: 'success', message: 'KYC approved and user account activated.' });
     } catch {
       setActionNotification({ open: true, type: 'error', message: 'Failed to approve KYC.' });
     }
     setLoading(false);
   };
-  const handleRejectKYC = async (id) => {
+  const handleRejectKYC = async (activityId) => {
     setLoading(true);
     const token = localStorage.getItem('adminToken');
     try {
-      await userAPI.rejectKYC(id, token);
-      setKycRequests(prev => prev.map(k => k.id === id ? { ...k, kycStatus: 'rejected' } : k));
+      await userAPI.rejectKYC(activityId, token);
+      setKycRequests(prev => prev.map(k => k.activityId === activityId ? { ...k, kycStatus: 'rejected' } : k));
       setActionNotification({ open: true, type: 'info', message: 'KYC rejected. User notified.' });
     } catch {
       setActionNotification({ open: true, type: 'error', message: 'Failed to reject KYC.' });
@@ -191,26 +193,42 @@ export default function AdminPanel() {
       ) : (
         <Grid container spacing={3}>
           {kycRequests.map(kyc => (
-            <Grid item xs={12} md={6} lg={4} key={kyc.id}>
+            <Grid item xs={12} md={6} lg={4} key={kyc.activityId}>
               <Card sx={{ bgcolor: '#232742', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                     <Avatar sx={{ bgcolor: 'primary.main' }} />
-                    <Typography variant="h6" fontWeight={700} color="primary">
-                      {kyc.firstName} {kyc.lastName}
-                    </Typography>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" fontWeight={700} color="primary">
+                        {kyc.kycData?.firstName || kyc.username}
+                      </Typography>
+                      <Typography variant="caption" color="rgba(255,255,255,0.6)">User: {kyc.username} • {kyc.email}</Typography>
+                    </Box>
                     <Chip label={kyc.kycStatus} color={kyc.kycStatus === 'verified' ? 'success' : kyc.kycStatus === 'pending' ? 'warning' : 'default'} />
                   </Box>
                   <Typography variant="body2" color="rgba(255,255,255,0.8)">
-                    Nationality: {kyc.nationality}<br />
-                    Phone: {kyc.phoneNumber}<br />
-                    Address: {kyc.address}, {kyc.city}, {kyc.state}, {kyc.country}
+                    <strong>Nationality:</strong> {kyc.kycData?.nationality || '-'}<br />
+                    <strong>Phone:</strong> {kyc.kycData?.phoneNumber || '-'}<br />
+                    <strong>Address:</strong> {kyc.kycData?.address || '-'}, {kyc.kycData?.city || '-'}, {kyc.kycData?.state || '-'} {kyc.kycData?.zipCode || ''}<br />
+                    <strong>Document:</strong> {kyc.kycData?.documentType || '-'} {kyc.kycData?.documentNumber ? `• ${kyc.kycData.documentNumber}` : ''}
                   </Typography>
+                  <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                    {/* Thumbnails */}
+                    {kyc.kycData?.identityDocumentUrl && (
+                      <img src={kyc.kycData.identityDocumentUrl} alt="identity" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} onClick={() => setPreviewImage(kyc.kycData.identityDocumentUrl)} />
+                    )}
+                    {kyc.kycData?.addressDocumentUrl && (
+                      <img src={kyc.kycData.addressDocumentUrl} alt="address" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} onClick={() => setPreviewImage(kyc.kycData.addressDocumentUrl)} />
+                    )}
+                    {kyc.kycData?.selfieUrl && (
+                      <img src={kyc.kycData.selfieUrl} alt="selfie" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} onClick={() => setPreviewImage(kyc.kycData.selfieUrl)} />
+                    )}
+                  </Box>
                   <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                    <Button variant="contained" color="success" disabled={kyc.kycStatus === 'verified' || loading} onClick={() => handleApproveKYC(kyc.id)}>
+                    <Button variant="contained" color="success" disabled={kyc.kycStatus === 'verified' || loading} onClick={() => handleApproveKYC(kyc.activityId)}>
                       {loading ? 'Approving...' : 'Approve'}
                     </Button>
-                    <Button variant="contained" color="error" disabled={kyc.kycStatus === 'rejected' || loading} onClick={() => handleRejectKYC(kyc.id)}>
+                    <Button variant="contained" color="error" disabled={kyc.kycStatus === 'rejected' || loading} onClick={() => handleRejectKYC(kyc.activityId)}>
                       {loading ? 'Rejecting...' : 'Reject'}
                     </Button>
                   </Box>
@@ -415,6 +433,15 @@ export default function AdminPanel() {
           </Alert>
         </Box>
       )}
+      {/* Image preview modal */}
+      <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md" fullWidth>
+        <DialogContent sx={{ bgcolor: '#000' }}>
+          {previewImage && <img src={previewImage} alt="preview" style={{ width: '100%', height: 'auto', borderRadius: 6 }} />}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreviewImage(null)} variant="contained">Close</Button>
+        </DialogActions>
+      </Dialog>
   {tab === 0 && renderKYC()}
   {tab === 1 && renderDeposits()}
   {tab === 2 && renderWithdrawals()}

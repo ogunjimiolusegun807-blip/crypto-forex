@@ -123,6 +123,20 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  approveKYC: async (activityId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/kyc/${activityId}/approve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
+  rejectKYC: async (activityId, token) => {
+    const res = await fetch(`${BASE_URL}/api/admin/kyc/${activityId}/reject`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  },
   adminGetAllPlans: async (token) => {
     const res = await fetch(`${BASE_URL}/api/admin/plans`, {
       headers: { 'Authorization': `Bearer ${token}` }
