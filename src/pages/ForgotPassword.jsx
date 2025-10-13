@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+console.log("ForgotPassword page loaded - latest build");
 import { Box, Card, Typography, TextField, Button, Alert } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
