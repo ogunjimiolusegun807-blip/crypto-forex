@@ -1,3 +1,7 @@
+// ...existing code...
+
+// (removed duplicate userAPI declaration)
+// (removed orphaned password reset methods)
 // Keep a small admin helper for auth-related admin calls (login/change-password live under /api/auth/admin)
 export const adminAPI = {
   adminLogin: async ({ email, password }) => {

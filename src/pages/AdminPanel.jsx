@@ -236,6 +236,10 @@ export default function AdminPanel() {
   const [signalSaving, setSignalSaving] = useState(false);
   // Users tab
   const [usersLoading, setUsersLoading] = useState(false);
+  // Reset password dialog state
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [resetUserId, setResetUserId] = useState('');
+  const [tempPassword, setTempPassword] = useState('');
 
   useEffect(() => {
     // Load resource-specific lists when their menu is opened
@@ -1104,6 +1108,7 @@ export default function AdminPanel() {
                     <Stack direction="row" spacing={2}>
                       <Button size="small" variant="contained" color="primary" onClick={() => { navigator.clipboard?.writeText(u.email || ''); setActionNotification({ open: true, type: 'info', message: 'Email copied to clipboard.' }); }}>Copy Email</Button>
                       <Button size="small" variant="outlined" color="success" onClick={() => { setManualCreditOpen(true); setSelectedUserId(u.id || u._id || u.userId); }}>Credit</Button>
+                      <Button size="small" variant="outlined" color="warning" onClick={() => { setResetUserId(u.id || u._id || u.userId); setTempPassword(''); setResetPasswordOpen(true); }}>Reset Password</Button>
                     </Stack>
                   </Box>
                 </CardContent>
@@ -1114,6 +1119,35 @@ export default function AdminPanel() {
       ) : (
         <Alert severity="info">No users found.</Alert>
       )}
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordOpen} onClose={() => setResetPasswordOpen(false)} maxWidth="xs" fullWidth>
+        <DialogContent>
+          <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Reset User Password</Typography>
+          <TextField label="Temporary Password" fullWidth value={tempPassword} onChange={e => setTempPassword(e.target.value)} sx={{ mb: 2 }} type="password" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetPasswordOpen(false)} color="inherit">Cancel</Button>
+          <Button variant="contained" color="warning" onClick={async () => {
+            if (!tempPassword || tempPassword.length < 6) {
+              setActionNotification({ open: true, type: 'error', message: 'Password must be at least 6 characters.' });
+              return;
+            }
+            setLoading(true);
+            try {
+              const token = localStorage.getItem('adminToken');
+              await userAPI.adminResetUserPassword(resetUserId, tempPassword, token);
+              setActionNotification({ open: true, type: 'success', message: 'Password reset successfully.' });
+              setResetPasswordOpen(false);
+              setTempPassword('');
+              setResetUserId('');
+            } catch (err) {
+              setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to reset password.' });
+            }
+            setLoading(false);
+          }}>Reset</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 

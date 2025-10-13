@@ -53,6 +53,8 @@ import Header from './component/Header';
 import Footer from './component/Footer';
 import AdminLogin from './pages/AdminLogin';
 import AdminPanel from './pages/AdminPanel';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const drawerWidth = 240;
 
@@ -160,22 +162,23 @@ function AppContent() {
   };
 
   // Check if current route is login, register, admin-login, or admin dashboard
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-  const isAdminLoginPage = location.pathname === '/admin-login';
-  const isAdminPanelPage = location.pathname.startsWith('/admin');
-
-  if (isAuthPage) {
-    // Render only the auth page, no AppBar/Drawer/Footer
-    return (
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Routes>
-      </Box>
-    );
-  }
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
+    const isAdminLoginPage = location.pathname === '/admin-login';
+    const isAdminPanelPage = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+    if (isAuthPage) {
+      // Render only the auth page, no AppBar/Drawer/Footer
+      return (
+        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+          </Routes>
+        </Box>
+      );
+    }
 
   if (isAdminLoginPage) {
     // Render only the admin login page, no AppBar/Drawer/Footer
