@@ -372,7 +372,13 @@ export const userAPI = {
     // Accept either a string email or an object { email }
     const payload = typeof email === 'string' ? { email } : (email || {});
     // Try the most likely endpoint first, then fallback to a secondary path.
-    const endpoints = [`${BASE_URL}/api/auth/request-reset`, `${BASE_URL}/api/auth/forgot-password`, `${BASE_URL}/api/auth/request-password-reset`];
+    // Backend exposes /api/auth/password-reset/request and /api/auth/password-reset/confirm
+    const endpoints = [
+      `${BASE_URL}/api/auth/password-reset/request`,
+      `${BASE_URL}/api/auth/request-reset`,
+      `${BASE_URL}/api/auth/forgot-password`,
+      `${BASE_URL}/api/auth/request-password-reset`
+    ];
     let lastErr;
     for (const url of endpoints) {
       try {
