@@ -46,6 +46,15 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+    // Confirm password reset using token and new password
+    confirmPasswordReset: async (token, newPassword) => {
+      const res = await fetch(`${BASE_URL}/api/auth/password-reset/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword })
+      });
+      return await handleResponse(res);
+    },
   login: async ({ email, password }) => {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
