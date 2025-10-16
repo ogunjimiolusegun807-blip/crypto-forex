@@ -367,6 +367,32 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  // Request a password reset link to be sent to the user's email
+  requestPasswordReset: async (email) => {
+    // Accept either a string email or an object { email }
+    const payload = typeof email === 'string' ? { email } : (email || {});
+    // Try the most likely endpoint first, then fallback to a secondary path.
+    const endpoints = [`${BASE_URL}/api/auth/request-reset`, `${BASE_URL}/api/auth/forgot-password`, `${BASE_URL}/api/auth/request-password-reset`];
+    let lastErr;
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        // If server returns 404/405, try the next endpoint. handleResponse will throw for non-2xx.
+        const data = await handleResponse(res);
+        return data;
+      } catch (err) {
+        lastErr = err;
+        // try next endpoint
+        continue;
+      }
+    }
+    // If all endpoints failed, throw the last error so UI can display it
+    throw lastErr || new Error('Failed to request password reset');
+  },
   updateSettings: async (settings, token) => {
     const res = await fetch(`${BASE_URL}/api/user/settings`, {
       method: 'PUT',
