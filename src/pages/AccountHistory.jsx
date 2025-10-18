@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import {
@@ -95,6 +95,30 @@ import {
 export default function AccountHistory() {
   const theme = useTheme();
   const { user, loading, error } = useUser();
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [activitiesError, setActivitiesError] = useState(null);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      setActivitiesLoading(true);
+      setActivitiesError(null);
+      try {
+        const res = await fetch('/api/user/activities', {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to fetch activities');
+        const data = await res.json();
+        setActivities(data);
+      } catch (err) {
+        setActivitiesError(err.message || 'Error fetching activities');
+      } finally {
+        setActivitiesLoading(false);
+      }
+    };
+    fetchActivities();
+  }, []);
   const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -191,39 +215,38 @@ export default function AccountHistory() {
     }
   };
 
-  // Use live transactions from user context
-  const transactions = user?.transactions || [];
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesType = filterType === 'all' || transaction.type === filterType;
-    const matchesStatus = filterStatus === 'all' || transaction.status === filterStatus;
-    const matchesSearch = searchQuery === '' || 
-      (transaction.description && transaction.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (transaction.reference && transaction.reference.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  // Use activities from backend
+  const filteredActivities = activities.filter(activity => {
+    const matchesType = filterType === 'all' || activity.type === filterType;
+    const matchesStatus = filterStatus === 'all' || activity.status === filterStatus;
+    const matchesSearch = searchQuery === '' ||
+      (activity.description && activity.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesType && matchesStatus && matchesSearch;
   });
 
-  // Calculate summary statistics from live data
-  const totalDeposits = transactions
-    .filter(t => t.type === 'deposit' && t.status === 'completed')
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-  const totalWithdrawals = transactions
-    .filter(t => t.type === 'withdrawal' && t.status === 'completed')
-    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-  const totalTrades = transactions.filter(t => t.type === 'trade').length;
+  // Calculate summary statistics from activities
+  const totalDeposits = activities
+    .filter(a => a.type === 'deposit' && a.status === 'completed')
+    .reduce((sum, a) => sum + (a.amount || 0), 0);
+  const totalWithdrawals = activities
+    .filter(a => a.type === 'withdrawal' && a.status === 'completed')
+    .reduce((sum, a) => sum + Math.abs(a.amount || 0), 0);
+  const totalTrades = activities.filter(a => a.type === 'trade').length;
   const currentBalance = user?.balance || 0;
 
   // Loading and error states
-  if (loading) {
+  if (loading || activitiesLoading) {
     return (
       <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress color="primary" size={48} />
       </Box>
     );
   }
-  if (error) {
+  if (error || activitiesError) {
     return (
       <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Alert severity="error">{error}</Alert>
+        <Alert severity="error">{error || activitiesError}</Alert>
       </Box>
     );
   }
@@ -475,9 +498,9 @@ export default function AccountHistory() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {filteredTransactions.map((transaction) => (
+                      {filteredActivities.map((activity) => (
                         <TableRow 
-                          key={transaction.id}
+                          key={activity.id}
                           sx={{ 
                             '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
                             borderBottom: '1px solid rgba(255,255,255,0.1)'
@@ -486,22 +509,16 @@ export default function AccountHistory() {
                           <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
                             <Box>
                               <Typography variant="body2" fontWeight={600}>
-                                {new Date(transaction.date).toLocaleDateString()}
-                              </Typography>
-                              <Typography variant="caption" color="rgba(255,255,255,0.6)">
-                                {transaction.time}
+                                {new Date(activity.createdAt).toLocaleDateString()}
                               </Typography>
                             </Box>
                           </TableCell>
                           <TableCell sx={{ color: 'rgba(255,255,255,0.9)' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              {getTransactionIcon(transaction.type)}
+                              {getTransactionIcon(activity.type)}
                               <Box>
                                 <Typography variant="body2" fontWeight={600}>
-                                  {transaction.description}
-                                </Typography>
-                                <Typography variant="caption" color="rgba(255,255,255,0.6)">
-                                  {transaction.reference}
+                                  {activity.description}
                                 </Typography>
                               </Box>
                             </Box>
@@ -510,31 +527,26 @@ export default function AccountHistory() {
                             <Typography 
                               variant="body2" 
                               fontWeight={700}
-                              color={transaction.amount > 0 ? 'success.main' : 'error.main'}
+                              color={activity.amount > 0 ? 'success.main' : 'error.main'}
                             >
-                              {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
+                              {activity.amount > 0 ? '+' : ''}${Math.abs(activity.amount || 0).toLocaleString()}
                             </Typography>
-                            {transaction.fee > 0 && (
-                              <Typography variant="caption" color="rgba(255,255,255,0.6)">
-                                Fee: ${transaction.fee}
-                              </Typography>
-                            )}
                           </TableCell>
                           <TableCell sx={{ color: 'primary.main', fontWeight: 600 }}>
-                            ${transaction.balance.toLocaleString()}
+                            {/* Optionally display balance if available, else blank */}
                           </TableCell>
                           <TableCell>
                             <Chip
-                              icon={getStatusIcon(transaction.status)}
-                              label={transaction.status.toUpperCase()}
-                              color={getStatusColor(transaction.status)}
+                              icon={getStatusIcon(activity.status)}
+                              label={activity.status ? activity.status.toUpperCase() : ''}
+                              color={getStatusColor(activity.status)}
                               size="small"
                               sx={{ fontWeight: 600 }}
                             />
                           </TableCell>
                           <TableCell>
                             <IconButton
-                              onClick={() => handleViewTransaction(transaction)}
+                              onClick={() => handleViewTransaction(activity)}
                               sx={{ color: 'primary.main' }}
                               size="small"
                             >
