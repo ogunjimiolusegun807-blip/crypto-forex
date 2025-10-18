@@ -105,11 +105,19 @@ export default function AccountHistory() {
       setActivitiesLoading(true);
       setActivitiesError(null);
       try {
-        const res = await fetch('/api/user/activities', {
+        const apiBase = process.env.NODE_ENV === 'production'
+          ? 'https://crypto-forex-backend.onrender.com'
+          : '';
+        const res = await fetch(`${apiBase}/api/user/activities`, {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
         });
         if (!res.ok) throw new Error('Failed to fetch activities');
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await res.text();
+          throw new Error('Server did not return JSON. Response: ' + text.slice(0, 100));
+        }
         const data = await res.json();
         setActivities(data);
       } catch (err) {
