@@ -109,7 +109,10 @@ export default function AccountHistory() {
           ? 'https://crypto-forex-backend.onrender.com'
           : '';
         const res = await fetch(`${apiBase}/api/user/activities`, {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {})
+          },
           credentials: 'include',
         });
         if (!res.ok) throw new Error('Failed to fetch activities');
@@ -127,7 +130,7 @@ export default function AccountHistory() {
       }
     };
     fetchActivities();
-  }, []);
+  }, [user?.token]);
   const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
