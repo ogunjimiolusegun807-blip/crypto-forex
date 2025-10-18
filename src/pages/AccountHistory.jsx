@@ -95,7 +95,7 @@ import {
 
 export default function AccountHistory() {
   const theme = useTheme();
-  const { user, loading, error } = useUser();
+  const { user, loading, error, isAuthenticated } = useUser();
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [activitiesError, setActivitiesError] = useState(null);
