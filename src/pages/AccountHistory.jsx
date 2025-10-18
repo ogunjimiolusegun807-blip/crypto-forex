@@ -572,8 +572,7 @@ export default function AccountHistory() {
                     </TableBody>
                   </Table>
                 </TableContainer>
-
-                {filteredTransactions.length === 0 && (
+                {filteredActivities.length === 0 && (
                   <Box sx={{ 
                     textAlign: 'center', 
                     py: 6,
