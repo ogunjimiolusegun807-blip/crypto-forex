@@ -108,10 +108,12 @@ export default function AccountHistory() {
         const apiBase = process.env.NODE_ENV === 'production'
           ? 'https://crypto-forex-backend.onrender.com'
           : '';
+        const token = localStorage.getItem('authToken');
+        console.log('JWT token for activities fetch:', token);
         const res = await fetch(`${apiBase}/api/user/activities`, {
           headers: {
             'Content-Type': 'application/json',
-            ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {})
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
           credentials: 'include',
         });
@@ -130,7 +132,7 @@ export default function AccountHistory() {
       }
     };
     fetchActivities();
-  }, [user?.token]);
+  }, [isAuthenticated]);
   const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
