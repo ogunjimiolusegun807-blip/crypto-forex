@@ -706,6 +706,7 @@ export default function AdminPanel() {
     const isObj = payload && typeof payload === 'object';
     const key = isObj ? (payload.id || payload.activityId || payload._id || payload.txnId || payload.transactionId || payload.userId || (payload.activity && (payload.activity.id || payload.activity._id)) || JSON.stringify(payload)) : String(payload);
     setProcessing(p => ({ ...p, [key]: true }));
+    let res = null;
     try {
       // build candidate ids to try (more exhaustive for legacy items)
       const candidates = [];
@@ -717,14 +718,12 @@ export default function AdminPanel() {
       }
       // unique and truthy
       const idCandidates = Array.from(new Set((candidates || []).filter(Boolean).map(String)));
-      let res = null;
       // try each candidate id against the activity endpoint
       for (const cid of idCandidates) {
         try {
           res = await userAPI.approveWithdrawal(cid, token);
           if (res) { break; }
         } catch (e) {
-          // try next candidate
           res = null;
         }
       }
@@ -735,51 +734,17 @@ export default function AdminPanel() {
           try { res = await userAPI.approveWithdrawalByUser(userId, token); } catch (e) { res = null; }
         }
       }
-      // remove any matching items locally and refresh authoritative list
+    } catch (err) {
+      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve withdrawal.' });
+    } finally {
+      // Always refresh authoritative list from backend so UI stays in sync
       try {
-        // fetch authoritative list from backend (only pending withdrawals)
         const all = await userAPI.adminGetAllWithdrawals(token);
         setWithdrawalRequests(all);
       } catch (e) {}
-      // refresh dashboard stats so counts update
       try { await refreshStats(token); } catch (e) {}
-      setActionNotification({ open: true, type: 'success', message: 'Withdrawal approved and user balance debited.' });
-      if (res && (res.balance !== undefined || res.activity)) {
-        const updated = {};
-        if (res.balance !== undefined) updated.balance = res.balance;
-        if (res.activity) updated.activity = res.activity;
-        updated.id = res.userId || res.user?.id || (isObj && (payload.userId || payload.user?.id)) || idCandidates[0];
-        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
-      } else {
-        // best-effort UI update
-        const withdrawalObj = isObj ? payload : withdrawalRequests.find(w => idCandidates.includes(String(w.id)) || idCandidates.includes(String(w.activityId)) || (w.activity && idCandidates.includes(String(w.activity.id))));
-        const userId = (res && (res.userId || res.user?.id)) || withdrawalObj?.userId || withdrawalObj?.user?.id || idCandidates[0];
-        let balanceFromServer;
-        try {
-          const users = await userAPI.adminGetAllUsers(token);
-          const u = (users || []).find(x => x.id === userId || x.userId === userId || x._id === userId || x.email === (withdrawalObj && withdrawalObj.email));
-          if (u && u.balance !== undefined) balanceFromServer = u.balance;
-        } catch (e) {}
-        const amt = withdrawalObj?.amount !== undefined ? Number(withdrawalObj.amount) : (res && res.amount) || 0;
-        const activity = {
-          id: `tmp-w-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-          type: 'withdrawal',
-          amount: -(Number(amt) || 0),
-          status: 'completed',
-          description: 'Withdrawal approved by admin',
-          date: new Date().toISOString(),
-          time: new Date().toLocaleTimeString(),
-          balance: balanceFromServer !== undefined ? balanceFromServer : undefined,
-          _isTemp: true
-        };
-        const updated = { id: userId, activity };
-        if (balanceFromServer !== undefined) updated.balance = balanceFromServer;
-        try { window.dispatchEvent(new CustomEvent('user-updated', { detail: updated })); } catch (e) {}
-      }
-    } catch (err) {
-      setActionNotification({ open: true, type: 'error', message: err.message || 'Failed to approve withdrawal.' });
+      setProcessing(p => ({ ...p, [key]: false }));
     }
-    setProcessing(p => ({ ...p, [key]: false }));
   };
 
   const handleRejectWithdrawal = async (payload) => {
