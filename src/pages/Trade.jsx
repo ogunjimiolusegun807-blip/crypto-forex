@@ -1270,7 +1270,7 @@ export default function Trade() {
                     color="white"
                     sx={{ fontSize: { xs: '1.5rem', sm: '1.8rem' } }}
                   >
-                    ${(accountBalance != null ? accountBalance : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${accountBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
                     Available Balance
