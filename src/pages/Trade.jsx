@@ -480,7 +480,7 @@ export default function Trade() {
     if (token) {
       try {
         const res = await userAPI.openTrade(token, {
-          userId: user?._id,
+          userId: user?.id,
           symbol: trade.symbol,
           amount: trade.amount,
           multiplier: trade.multiplier,
