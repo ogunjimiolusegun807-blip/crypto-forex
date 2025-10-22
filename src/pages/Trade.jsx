@@ -386,7 +386,7 @@ export default function Trade() {
           }
           forexChanges[pair] = {
             price: rate,
-            change: (Math.random() * 2 - 1).toFixed(2) // random demo change
+            change: ((Math.random() * 2 - 1) ?? 0).toFixed(2) // random demo change
           };
         });
 
@@ -418,7 +418,7 @@ export default function Trade() {
             return {
               ...asset,
               price: cg?.usd || asset.price,
-              change: cg?.usd_24h_change ? cg.usd_24h_change.toFixed(2) : asset.change
+              change: cg?.usd_24h_change !== undefined && cg?.usd_24h_change !== null ? cg.usd_24h_change.toFixed(2) : (asset.change ?? 0)
             };
           }
           if (asset.type === 'forex') {
@@ -848,7 +848,7 @@ export default function Trade() {
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" color="white">
-                          {asset.price.toFixed(4)}
+                          {(asset.price ?? 0).toFixed(4)}
                         </Typography>
                         <Typography
                           variant="caption"
@@ -891,7 +891,7 @@ export default function Trade() {
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" color="white">
-                          ${asset.price.toFixed(2)}
+                          ${(asset.price ?? 0).toFixed(2)}
                         </Typography>
                         <Typography
                           variant="caption"
@@ -1517,7 +1517,7 @@ export default function Trade() {
                             fontWeight={600}
                             sx={{ fontSize: '0.7rem' }}
                           >
-                            {trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                            {trade.pnl > 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(2)}
                           </Typography>
                         </Box>
                       </Paper>
