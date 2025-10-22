@@ -232,6 +232,16 @@ export default function Trade() {
   // Live market state
   const [tradingAssets, setTradingAssets] = useState(initialTradingAssets);
   const [selectedAsset, setSelectedAsset] = useState(initialTradingAssets[0]);
+  // Update selectedAsset if tradingAssets change (e.g., after live fetch)
+  useEffect(() => {
+    if (!selectedAsset) return;
+    const updated = tradingAssets.find(a => a.symbol === selectedAsset.symbol);
+    if (updated && (updated.price !== selectedAsset.price || updated.change !== selectedAsset.change)) {
+      setSelectedAsset(updated);
+      setCurrentPrice(updated.price);
+      setPriceChange(updated.change);
+    }
+  }, [tradingAssets]);
   const [selectedMultiplier, setSelectedMultiplier] = useState(multipliers[0]);
   const [tradeAmount, setTradeAmount] = useState(100);
   const [currentPrice, setCurrentPrice] = useState(selectedAsset.price);
@@ -318,14 +328,10 @@ export default function Trade() {
           return asset;
         });
         setTradingAssets(updatedAssets);
-        // Update selected asset price if needed
-        const sel = updatedAssets.find(a => a.symbol === selectedAsset.symbol);
-        if (sel) {
-          setCurrentPrice(sel.price);
-          setPriceChange(sel.change);
-        }
+        // Debug: log updated assets
+        console.log('Live market data:', updatedAssets);
       } catch (err) {
-        // Fail silently for demo
+        console.error('Market data fetch error:', err);
       }
     };
     fetchMarketData();
