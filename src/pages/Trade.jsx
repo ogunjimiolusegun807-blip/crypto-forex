@@ -513,16 +513,43 @@ export default function Trade() {
   const closeTrade = async (tradeId) => {
     const trade = activeTrades.find(t => t.id === tradeId);
     if (!trade) return;
-    const exitPrice = Number(currentPrice);
-    const entryPrice = Number(trade.entryPrice);
-    const amount = Number(trade.amount);
-    const multiplier = Number(trade.multiplier.value);
+    // Robust parsing helpers
+    const parseNumber = (v) => {
+      if (v === undefined || v === null) return NaN;
+      if (typeof v === 'number') return v;
+      // strip currency symbols and commas
+      const cleaned = String(v).replace(/[^0-9.-]+/g, '');
+      return cleaned === '' ? NaN : Number(cleaned);
+    };
+    const parseMultiplier = (m) => {
+      if (m === undefined || m === null) return 1;
+      if (typeof m === 'number') return m;
+      if (typeof m === 'string') {
+        // Accept formats like 'X2', '2', 'x5'
+        const num = parseFloat(m.replace(/[^0-9.\-]+/g, ''));
+        return Number.isNaN(num) ? 1 : num;
+      }
+      if (typeof m === 'object') {
+        if (m.value !== undefined) return parseMultiplier(m.value);
+        if (m.label !== undefined) return parseMultiplier(m.label);
+      }
+      return 1;
+    };
+
+    const exitPrice = parseNumber(currentPrice);
+    const entryPrice = parseNumber(trade.entryPrice);
+    const amount = parseNumber(trade.amount);
+    const multiplier = parseMultiplier(trade.multiplier);
+
+    // Debug log to help diagnose invalid closes
+    console.debug('Closing trade values', { exitPrice, entryPrice, amount, multiplier, trade });
+
     if (
       isNaN(exitPrice) || isNaN(entryPrice) || isNaN(amount) || isNaN(multiplier) || entryPrice === 0
     ) {
       setSnackbar({
         open: true,
-        message: 'Trade close failed due to invalid price or amount.',
+        message: 'Trade close failed due to invalid price or amount. Check that entry price and amount are valid numbers.',
         severity: 'error'
       });
       return;
