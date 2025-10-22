@@ -237,6 +237,8 @@ export default function Trade() {
     }
   };
   const [accountBalance, setAccountBalance] = useState(() => getStored('accountBalance', user?.balance ?? 0));
+  // Prevent auto-saving to backend immediately after we've just synced from backend
+  const skipNextSaveRef = useRef(false);
   const [activeTrades, setActiveTrades] = useState(() => getStored('activeTrades', []));
   const [tradeHistory, setTradeHistory] = useState(() => getStored('tradeHistory', []));
 
@@ -256,12 +258,15 @@ export default function Trade() {
         const history = tradesArr.filter(t => t.status === 'CLOSED');
         setActiveTrades(active);
         setTradeHistory(history);
-        // Get balance
-        const balRes = await userAPI.getBalance(token);
+  // Get balance
+  const balRes = await userAPI.getBalance(token);
         console.debug('Balance response from backend:', balRes);
         // balRes may be { balance: number } or a plain number
         const resolvedBalance = (balRes && balRes.balance !== undefined) ? Number(balRes.balance) : (typeof balRes === 'number' ? balRes : 0);
-        setAccountBalance(Number.isNaN(resolvedBalance) ? 0 : resolvedBalance);
+  const finalBal = Number.isNaN(resolvedBalance) ? 0 : resolvedBalance;
+  setAccountBalance(finalBal);
+  // Next accountBalance effect should not push this backend value back to server
+  skipNextSaveRef.current = true;
       } catch (err) {
         // Fallback to localStorage if backend fails
         console.error('Backend sync error:', err);
@@ -271,12 +276,33 @@ export default function Trade() {
     };
     syncFromBackend();
   }, [user?.token]);
+
+  // Helper to refresh only the balance from backend (used after admin deposit approval)
+  const refreshBalance = async () => {
+    const token = user?.token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
+    if (!token) throw new Error('Not authenticated');
+    try {
+      const balRes = await userAPI.getBalance(token);
+      console.debug('Balance response from backend (refresh):', balRes);
+      const resolvedBalance = (balRes && balRes.balance !== undefined) ? Number(balRes.balance) : (typeof balRes === 'number' ? balRes : 0);
+      setAccountBalance(Number.isNaN(resolvedBalance) ? 0 : resolvedBalance);
+      return resolvedBalance;
+    } catch (err) {
+      console.error('Balance refresh error:', err);
+      throw err;
+    }
+  };
   // Persist to localStorage whenever trades or balance change
   useEffect(() => {
     localStorage.setItem('accountBalance', JSON.stringify(accountBalance));
     // Save to backend if user.token exists
     if (user?.token && !syncing) {
-      userAPI.saveBalance(user.token, accountBalance).catch(e => console.error('Save balance error:', e));
+      if (skipNextSaveRef.current) {
+        // consume the skip flag and do not sync this change to backend (it came from backend)
+        skipNextSaveRef.current = false;
+      } else {
+        userAPI.saveBalance(user.token, accountBalance).catch(e => console.error('Save balance error:', e));
+      }
     }
   }, [accountBalance]);
   useEffect(() => {
@@ -504,30 +530,47 @@ export default function Trade() {
     setConfirmDialog({ open: false, trade: null });
   };
 
-  // Close trade
+  // Close trade (defensive, avoids crashes on unexpected responses)
   const closeTrade = async (tradeId) => {
     const trade = activeTrades.find(t => t.id === tradeId);
     if (!trade) return;
     const token = user?.token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
-    if (token) {
-      try {
-        const exitPrice = currentPrice;
-        const res = await userAPI.closeTrade(token, trade._id || trade.id, exitPrice);
-        setAccountBalance(res.balance);
+    if (!token) {
+      setSnackbar({ open: true, message: 'Not authenticated. Please log in.', severity: 'error' });
+      return;
+    }
+
+    try {
+      const exitPrice = typeof currentPrice === 'number' ? currentPrice : Number(trade.entryPrice || 0);
+      const res = await userAPI.closeTrade(token, trade._id || trade.id, exitPrice);
+
+      // Defensive checks for backend response
+      if (!res) throw new Error('Empty response from server');
+      const newBalance = (res.balance !== undefined) ? Number(res.balance) : (res.trade && res.trade.userBalance !== undefined ? Number(res.trade.userBalance) : null);
+      if (newBalance !== null && !Number.isNaN(newBalance)) {
+        setAccountBalance(newBalance);
+      } else {
+        // If backend didn't return a balance, trigger a fresh fetch
+        await refreshBalance();
+      }
+
+      // Update trades state carefully
+      if (res.trade) {
         setActiveTrades(prev => prev.filter(t => (t._id || t.id) !== (trade._id || trade.id)));
         setTradeHistory(prev => [res.trade, ...prev]);
         setSnackbar({
           open: true,
-          message: `Trade closed with ${res.trade.profitLoss >= 0 ? 'profit' : 'loss'} of $${Math.abs(res.trade.profitLoss)}`,
-          severity: res.trade.profitLoss >= 0 ? 'success' : 'warning'
+          message: `Trade closed with ${res.trade.profitLoss >= 0 ? 'profit' : 'loss'} of $${Math.abs(res.trade.profitLoss || 0)}`,
+          severity: (res.trade.profitLoss >= 0) ? 'success' : 'warning'
         });
-      } catch (err) {
-        setSnackbar({
-          open: true,
-          message: err.message || 'Trade close failed',
-          severity: 'error'
-        });
+      } else {
+        // fallback: remove the trade locally to avoid stuck UI
+        setActiveTrades(prev => prev.filter(t => (t._id || t.id) !== (trade._id || trade.id)));
+        setSnackbar({ open: true, message: 'Trade closed (no trade payload returned).', severity: 'info' });
       }
+    } catch (err) {
+      console.error('Close trade error:', err);
+      setSnackbar({ open: true, message: (err && err.message) ? err.message : 'Trade close failed', severity: 'error' });
     }
   };
 
@@ -643,6 +686,16 @@ export default function Trade() {
             size="small"
             sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }}
           />
+          <Button variant="outlined" color="secondary" size="small" onClick={async () => {
+            try {
+              await refreshBalance();
+              setSnackbar({ open: true, message: 'Balance refreshed', severity: 'success' });
+            } catch (e) {
+              setSnackbar({ open: true, message: 'Failed to refresh balance', severity: 'error' });
+            }
+          }} sx={{ ml: 1 }}>
+            Refresh Balance
+          </Button>
           <Button
             variant="contained"
             color="primary"
