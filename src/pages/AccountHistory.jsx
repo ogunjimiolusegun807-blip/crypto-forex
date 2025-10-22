@@ -241,10 +241,10 @@ export default function AccountHistory() {
 
   // Calculate summary statistics from activities
   const totalDeposits = activities
-    .filter(a => a.type === 'deposit' && a.status === 'completed')
+    .filter(a => a.type === 'deposit' && (a.status === 'completed' || a.status === 'approved'))
     .reduce((sum, a) => sum + (a.amount || 0), 0);
   const totalWithdrawals = activities
-    .filter(a => a.type === 'withdrawal' && a.status === 'completed')
+    .filter(a => a.type === 'withdrawal' && (a.status === 'completed' || a.status === 'approved'))
     .reduce((sum, a) => sum + Math.abs(a.amount || 0), 0);
   const totalTrades = activities.filter(a => a.type === 'trade').length;
   const currentBalance = user?.balance || 0;
