@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { userAPI } from '../../crypto-forex-backend-main/src/services/api';
+import { userAPI } from '../crypto-forex-backend-main/src/services/api';
 // For live market data
 const COINGECKO_IDS = {
   'BTC/USDT': 'bitcoin',
