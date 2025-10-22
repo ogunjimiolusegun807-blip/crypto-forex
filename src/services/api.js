@@ -370,6 +370,94 @@ export const userAPI = {
     });
     return await handleResponse(res);
   },
+  // --- Trade & Balance sync helpers (try multiple endpoint variants for compatibility) ---
+  getTrades: async (token) => {
+    const endpoints = [
+      `${BASE_URL}/api/user/trades`,
+      `${BASE_URL}/api/auth/user/trades`,
+      `${BASE_URL}/api/trades`
+    ];
+    let lastErr;
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await handleResponse(res);
+        return data;
+      } catch (err) {
+        lastErr = err;
+        continue;
+      }
+    }
+    throw lastErr || new Error('Failed to fetch trades');
+  },
+  saveTrade: async (token, trade) => {
+    const endpoints = [
+      `${BASE_URL}/api/user/trades`,
+      `${BASE_URL}/api/auth/user/trades`,
+      `${BASE_URL}/api/trades`
+    ];
+    let lastErr;
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(trade)
+        });
+        return await handleResponse(res);
+      } catch (err) {
+        lastErr = err;
+        continue;
+      }
+    }
+    throw lastErr || new Error('Failed to save trade');
+  },
+  getBalance: async (token) => {
+    const endpoints = [
+      `${BASE_URL}/api/user/balance`,
+      `${BASE_URL}/api/auth/user/balance`,
+      `${BASE_URL}/api/balance`
+    ];
+    let lastErr;
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await handleResponse(res);
+        // Accept either { balance } or { data: { balance } } or number
+        if (typeof data === 'number') return { balance: data };
+        if (data && data.balance !== undefined) return data;
+        if (data && data.data && data.data.balance !== undefined) return { balance: data.data.balance };
+        // if response shape unexpected, return as-is
+        return data;
+      } catch (err) {
+        lastErr = err;
+        continue;
+      }
+    }
+    throw lastErr || new Error('Failed to fetch balance');
+  },
+  saveBalance: async (token, balance) => {
+    const endpoints = [
+      `${BASE_URL}/api/user/balance`,
+      `${BASE_URL}/api/auth/user/balance`,
+      `${BASE_URL}/api/balance`
+    ];
+    let lastErr;
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ balance })
+        });
+        return await handleResponse(res);
+      } catch (err) {
+        lastErr = err;
+        continue;
+      }
+    }
+    throw lastErr || new Error('Failed to save balance');
+  },
   getSettings: async (token) => {
     const res = await fetch(`${BASE_URL}/api/user/settings`, {
       headers: { 'Authorization': `Bearer ${token}` }
