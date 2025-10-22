@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { userAPI } from '../../crypto-forex-backend-main/src/services/api';
 // For live market data
 const COINGECKO_IDS = {
   'BTC/USDT': 'bitcoin',
@@ -206,6 +207,7 @@ const multipliers = [
 export default function Trade() {
   const theme = useTheme();
   const { user, loading, error } = useUser();
+  const [syncing, setSyncing] = useState(false);
   const [mailDialogOpen, setMailDialogOpen] = useState(false);
   const handleMailUsClick = () => setMailDialogOpen(true);
   const handleMailDialogClose = () => setMailDialogOpen(false);
@@ -225,9 +227,57 @@ export default function Trade() {
   };
 
   // Use real user data for trades and balance. Keep local state so UI updates immediately
-  const [accountBalance, setAccountBalance] = useState(() => user?.balance ?? 0);
-  const [activeTrades, setActiveTrades] = useState(() => user?.activeTrades ?? []);
-  const [tradeHistory, setTradeHistory] = useState(() => user?.tradeHistory ?? []);
+  // Load from localStorage if available
+  const getStored = (key, fallback) => {
+    try {
+      const val = localStorage.getItem(key);
+      return val ? JSON.parse(val) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  const [accountBalance, setAccountBalance] = useState(() => getStored('accountBalance', user?.balance ?? 0));
+  const [activeTrades, setActiveTrades] = useState(() => getStored('activeTrades', []));
+  const [tradeHistory, setTradeHistory] = useState(() => getStored('tradeHistory', []));
+
+  // Sync with backend on mount (if user.token exists)
+  useEffect(() => {
+    const syncFromBackend = async () => {
+      if (!user?.token) return;
+      setSyncing(true);
+      try {
+        // Get trades
+        const trades = await userAPI.getTrades(user.token);
+        const active = trades.filter(t => t.status === 'ACTIVE');
+        const history = trades.filter(t => t.status === 'CLOSED');
+        setActiveTrades(active);
+        setTradeHistory(history);
+        // Get balance
+        const balRes = await userAPI.getBalance(user.token);
+        setAccountBalance(balRes.balance ?? 0);
+      } catch (err) {
+        // Fallback to localStorage if backend fails
+        console.error('Backend sync error:', err);
+      } finally {
+        setSyncing(false);
+      }
+    };
+    syncFromBackend();
+  }, [user?.token]);
+  // Persist to localStorage whenever trades or balance change
+  useEffect(() => {
+    localStorage.setItem('accountBalance', JSON.stringify(accountBalance));
+    // Save to backend if user.token exists
+    if (user?.token && !syncing) {
+      userAPI.saveBalance(user.token, accountBalance).catch(e => console.error('Save balance error:', e));
+    }
+  }, [accountBalance]);
+  useEffect(() => {
+    localStorage.setItem('activeTrades', JSON.stringify(activeTrades));
+  }, [activeTrades]);
+  useEffect(() => {
+    localStorage.setItem('tradeHistory', JSON.stringify(tradeHistory));
+  }, [tradeHistory]);
 
   // Live market state
   const [tradingAssets, setTradingAssets] = useState(initialTradingAssets);
@@ -408,10 +458,8 @@ export default function Trade() {
   };
 
   // Confirm trade execution
-  const confirmTrade = () => {
+  const confirmTrade = async () => {
     const { trade } = confirmDialog;
-
-    // Check if sufficient balance
     if (trade.amount > accountBalance) {
       setSnackbar({
         open: true,
@@ -421,41 +469,47 @@ export default function Trade() {
       setConfirmDialog({ open: false, trade: null });
       return;
     }
-
-    // Create new trade
     const newTrade = {
       id: `T${Date.now()}`,
       ...trade,
       status: 'ACTIVE',
       pnl: 0
     };
-
-  // Update balance (local UI). Persisting to backend/user context is outside this page's scope
-  setAccountBalance(prev => prev - trade.amount);
-
-  // Add to active trades
-  setActiveTrades(prev => [newTrade, ...prev]);
-
+    setAccountBalance(prev => prev - trade.amount);
+    setActiveTrades(prev => [newTrade, ...prev]);
+    // Save to backend
+    if (user?.token) {
+      try {
+        await userAPI.saveTrade(user.token, {
+          type: 'trade',
+          amount: trade.amount,
+          meta: {
+            symbol: trade.symbol,
+            direction: trade.type,
+            multiplier: trade.multiplier,
+            entryPrice: trade.entryPrice
+          }
+        });
+      } catch (err) {
+        console.error('Save trade error:', err);
+      }
+    }
     setSnackbar({
       open: true,
       message: `${trade.type} ${trade.multiplier} ${trade.symbol} trade opened successfully!`,
       severity: 'success'
     });
-
     setConfirmDialog({ open: false, trade: null });
   };
 
   // Close trade
-  const closeTrade = (tradeId) => {
+  const closeTrade = async (tradeId) => {
     const trade = activeTrades.find(t => t.id === tradeId);
     if (!trade) return;
-
     const exitPrice = Number(currentPrice);
     const entryPrice = Number(trade.entryPrice);
     const amount = Number(trade.amount);
     const multiplier = Number(trade.multiplier.value);
-
-    // Defensive: ensure all numbers are valid
     if (
       isNaN(exitPrice) || isNaN(entryPrice) || isNaN(amount) || isNaN(multiplier) || entryPrice === 0
     ) {
@@ -466,12 +520,9 @@ export default function Trade() {
       });
       return;
     }
-
     const pnl = trade.type === 'BUY'
       ? (exitPrice - entryPrice) * (amount / entryPrice) * multiplier
       : (entryPrice - exitPrice) * (amount / entryPrice) * multiplier;
-
-    // Update trade
     const updatedTrade = {
       ...trade,
       exitPrice,
@@ -479,17 +530,32 @@ export default function Trade() {
       status: 'CLOSED',
       timestamp: new Date()
     };
-
-    // Update balance (local UI)
     setAccountBalance(prev => {
       const newBalance = Number(prev) + amount + (isNaN(pnl) ? 0 : pnl);
       return isNaN(newBalance) ? 0 : Math.round(newBalance * 100) / 100;
     });
-
-    // Move to history
     setActiveTrades(prev => prev.filter(t => t.id !== tradeId));
     setTradeHistory(prev => [updatedTrade, ...prev]);
-
+    // Save closed trade to backend
+    if (user?.token) {
+      try {
+        await userAPI.saveTrade(user.token, {
+          type: 'trade',
+          amount: trade.amount,
+          meta: {
+            symbol: trade.symbol,
+            direction: trade.type,
+            multiplier: trade.multiplier,
+            entryPrice: trade.entryPrice,
+            exitPrice,
+            pnl: Math.round(pnl * 100) / 100,
+            closed: true
+          }
+        });
+      } catch (err) {
+        console.error('Save closed trade error:', err);
+      }
+    }
     setSnackbar({
       open: true,
       message: `Trade closed with ${pnl >= 0 ? 'profit' : 'loss'} of $${Math.abs(pnl)}`,
