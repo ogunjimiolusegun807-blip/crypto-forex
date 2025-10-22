@@ -1,4 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
+// For live market data
+const COINGECKO_IDS = {
+  'BTC/USDT': 'bitcoin',
+  'ETH/USDT': 'ethereum',
+  'BNB/USDT': 'binancecoin',
+  'ADA/USDT': 'cardano',
+  'SOL/USDT': 'solana',
+  'DOT/USDT': 'polkadot',
+};
+const FOREX_PAIRS = [
+  'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'AUD/USD', 'USD/CAD'
+];
+const STOCK_SYMBOLS = [
+  'AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', 'NVDA'
+];
 import { useUser } from '../contexts/UserContext';
 import {
   Box,
@@ -54,7 +69,7 @@ import {
 } from '@mui/icons-material';
 
 // Trading assets - Crypto, Forex, and Stocks with TradingView symbols
-const tradingAssets = [
+const initialTradingAssets = [
   // Cryptocurrency
   { symbol: 'BTC/USDT', name: 'Bitcoin', price: 45000, change: 2.5, type: 'crypto', category: 'Cryptocurrency', tvSymbol: 'BINANCE:BTCUSDT' },
   { symbol: 'ETH/USDT', name: 'Ethereum', price: 2800, change: -1.2, type: 'crypto', category: 'Cryptocurrency', tvSymbol: 'BINANCE:ETHUSDT' },
@@ -214,7 +229,9 @@ export default function Trade() {
   const [activeTrades, setActiveTrades] = useState(() => user?.activeTrades ?? []);
   const [tradeHistory, setTradeHistory] = useState(() => user?.tradeHistory ?? []);
 
-  const [selectedAsset, setSelectedAsset] = useState(tradingAssets[0]);
+  // Live market state
+  const [tradingAssets, setTradingAssets] = useState(initialTradingAssets);
+  const [selectedAsset, setSelectedAsset] = useState(initialTradingAssets[0]);
   const [selectedMultiplier, setSelectedMultiplier] = useState(multipliers[0]);
   const [tradeAmount, setTradeAmount] = useState(100);
   const [currentPrice, setCurrentPrice] = useState(selectedAsset.price);
@@ -223,6 +240,98 @@ export default function Trade() {
   const [confirmDialog, setConfirmDialog] = useState({ open: false, trade: null });
   const [chartWidth, setChartWidth] = useState(900);
   const isResizing = useRef(false);
+
+  // Fetch live market data every 30 seconds
+  useEffect(() => {
+    let intervalId;
+    const fetchMarketData = async () => {
+      try {
+        // --- Crypto (CoinGecko) ---
+        const cgIds = Object.values(COINGECKO_IDS).join(',');
+        const cgRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=usd&include_24hr_change=true`);
+        const cgData = await cgRes.json();
+
+        // --- Forex (exchangerate.host) ---
+        const forexRes = await fetch('https://api.exchangerate.host/latest?base=USD');
+        const forexData = await forexRes.json();
+        // Calculate changes (mocked as random for demo)
+        const forexChanges = {};
+        FOREX_PAIRS.forEach(pair => {
+          const [base, quote] = pair.split('/');
+          let rate = 1;
+          if (base === 'USD') {
+            rate = forexData.rates[quote];
+          } else if (quote === 'USD') {
+            rate = 1 / forexData.rates[base];
+          } else {
+            rate = forexData.rates[quote] / forexData.rates[base];
+          }
+          forexChanges[pair] = {
+            price: rate,
+            change: (Math.random() * 2 - 1).toFixed(2) // random demo change
+          };
+        });
+
+        // --- Stocks (Finnhub demo, limited to AAPL, TSLA, etc.) ---
+        // Finnhub demo token: 'sandbox_c0b1v2qad3i8h7jv7gpg'
+        const stockPromises = STOCK_SYMBOLS.map(async symbol => {
+          try {
+            const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=sandbox_c0b1v2qad3i8h7jv7gpg`);
+            const data = await res.json();
+            return {
+              symbol,
+              price: data.c || 0,
+              change: data.dp || 0
+            };
+          } catch {
+            return { symbol, price: 0, change: 0 };
+          }
+        });
+        const stocksData = await Promise.all(stockPromises);
+
+        // --- Merge all ---
+        const updatedAssets = initialTradingAssets.map(asset => {
+          if (asset.type === 'crypto') {
+            const cgId = COINGECKO_IDS[asset.symbol];
+            const cg = cgData[cgId];
+            return {
+              ...asset,
+              price: cg?.usd || asset.price,
+              change: cg?.usd_24h_change ? cg.usd_24h_change.toFixed(2) : asset.change
+            };
+          }
+          if (asset.type === 'forex') {
+            return {
+              ...asset,
+              price: forexChanges[asset.symbol]?.price || asset.price,
+              change: forexChanges[asset.symbol]?.change || asset.change
+            };
+          }
+          if (asset.type === 'stock') {
+            const stock = stocksData.find(s => s.symbol === asset.symbol);
+            return {
+              ...asset,
+              price: stock?.price || asset.price,
+              change: stock?.change || asset.change
+            };
+          }
+          return asset;
+        });
+        setTradingAssets(updatedAssets);
+        // Update selected asset price if needed
+        const sel = updatedAssets.find(a => a.symbol === selectedAsset.symbol);
+        if (sel) {
+          setCurrentPrice(sel.price);
+          setPriceChange(sel.change);
+        }
+      } catch (err) {
+        // Fail silently for demo
+      }
+    };
+    fetchMarketData();
+    intervalId = setInterval(fetchMarketData, 30000);
+    return () => clearInterval(intervalId);
+  }, [selectedAsset.symbol]);
 
   // Update price from chart
   const handlePriceUpdate = (price, change) => {
