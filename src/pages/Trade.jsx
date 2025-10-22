@@ -288,18 +288,21 @@ export default function Trade() {
           };
         });
 
-        // --- Stocks (Finnhub demo, limited to AAPL, TSLA, etc.) ---
-        // Finnhub demo token: 'sandbox_c0b1v2qad3i8h7jv7gpg'
+        // --- Stocks (Finnhub, using user API key) ---
+        const FINNHUB_API_KEY = 'd3sf0ihr01qvii72vqu0d3sf0ihr01qvii72vqug';
         const stockPromises = STOCK_SYMBOLS.map(async symbol => {
           try {
-            const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=sandbox_c0b1v2qad3i8h7jv7gpg`);
+            const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`);
+            if (!res.ok) throw new Error('Finnhub API error');
             const data = await res.json();
             return {
               symbol,
               price: data.c || 0,
               change: data.dp || 0
             };
-          } catch {
+          } catch (err) {
+            // Fallback to previous value or static
+            console.error(`Stock API error for ${symbol}:`, err);
             return { symbol, price: 0, change: 0 };
           }
         });
