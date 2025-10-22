@@ -984,7 +984,7 @@ export default function AdminPanel() {
                   <Typography variant="h6" color="primary" fontWeight={700} gutterBottom>
                     {withdrawal.username || withdrawal.userName || withdrawal.user?.name || 'User'}
                   </Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
+                  <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
                     Amount: ${
                       withdrawal.amount !== undefined ? withdrawal.amount :
                       withdrawal.meta?.amount !== undefined ? withdrawal.meta.amount :
