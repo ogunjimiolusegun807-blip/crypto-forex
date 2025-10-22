@@ -71,7 +71,9 @@ const getStatusColor = (status) => {
   }
 };
 
-export default function AccountHistory() {
+import { userAPI } from '../services/api';
+
+export default function TradeHistory() {
   const theme = useTheme();
   const { user, loading, error } = useUser();
   const navigate = useNavigate();
@@ -96,6 +98,32 @@ export default function AccountHistory() {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [tradeHistory, setTradeHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState(null);
+
+  // Fetch trade history from backend
+  useEffect(() => {
+    const fetchTradeHistory = async () => {
+      setHistoryLoading(true);
+      setHistoryError(null);
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) throw new Error('No auth token found');
+        const history = await userAPI.getTradeHistory(token);
+        setTradeHistory(Array.isArray(history) ? history : []);
+      } catch (err) {
+        setHistoryError(err.message || 'Failed to fetch trade history');
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+    fetchTradeHistory();
+    // Listen for trade-history-updated event to auto-refresh
+    const handler = () => fetchTradeHistory();
+    window.addEventListener('trade-history-updated', handler);
+    return () => window.removeEventListener('trade-history-updated', handler);
+  }, []);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -107,8 +135,7 @@ export default function AccountHistory() {
   };
 
   // Filter transactions based on search and filters
-  // Use user's trade history or empty array
-  const transactions = user?.tradeHistory || [];
+  const transactions = tradeHistory;
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          transaction.reference?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -123,17 +150,17 @@ export default function AccountHistory() {
     page * rowsPerPage + rowsPerPage
   );
 
-  if (loading) {
+  if (loading || historyLoading) {
     return (
       <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h6" color="primary">Loading user data...</Typography>
+        <Typography variant="h6" color="primary">Loading trade history...</Typography>
       </Box>
     );
   }
-  if (error) {
+  if (error || historyError) {
     return (
       <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h6" color="error">{error}</Typography>
+        <Typography variant="h6" color="error">{error || historyError}</Typography>
       </Box>
     );
   }

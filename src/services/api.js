@@ -1,3 +1,11 @@
+  // Fetch all trade history for authenticated user
+  getTradeHistory: async (token) => {
+    const res = await fetch(`${BASE_URL}/api/trade/history`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await handleResponse(res);
+  }
+;
 // ...existing code...
 
 // (removed duplicate userAPI declaration)

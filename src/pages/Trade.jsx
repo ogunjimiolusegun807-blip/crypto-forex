@@ -258,7 +258,9 @@ export default function Trade() {
         const active = tradesArr.filter(t => t.status === 'ACTIVE');
         const history = tradesArr.filter(t => t.status === 'CLOSED');
         setActiveTrades(active);
-        setTradeHistory(history);
+  setTradeHistory(history);
+  // Dispatch event to notify trade history update for auto-refresh
+  window.dispatchEvent(new Event('trade-history-updated'));
   // Get balance
   const balRes = await userAPI.getBalance(token);
         console.debug('Balance response from backend:', balRes);
