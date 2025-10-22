@@ -237,6 +237,7 @@ export default function Trade() {
     }
   };
   const [accountBalance, setAccountBalance] = useState(() => getStored('accountBalance', user?.balance ?? 0));
+  const [lastBalanceSync, setLastBalanceSync] = useState(null);
   // Prevent auto-saving to backend immediately after we've just synced from backend
   const skipNextSaveRef = useRef(false);
   const [activeTrades, setActiveTrades] = useState(() => getStored('activeTrades', []));
@@ -286,12 +287,30 @@ export default function Trade() {
       console.debug('Balance response from backend (refresh):', balRes);
       const resolvedBalance = (balRes && balRes.balance !== undefined) ? Number(balRes.balance) : (typeof balRes === 'number' ? balRes : 0);
       setAccountBalance(Number.isNaN(resolvedBalance) ? 0 : resolvedBalance);
+  setLastBalanceSync(new Date().toISOString());
       return resolvedBalance;
     } catch (err) {
       console.error('Balance refresh error:', err);
       throw err;
     }
   };
+
+  // Poll backend for balance every 10 seconds while authenticated (short-term fix)
+  useEffect(() => {
+    let id;
+    const startPolling = () => {
+      if (!user?.token && typeof window !== 'undefined' && !localStorage.getItem('authToken')) return;
+      id = setInterval(async () => {
+        try {
+          await refreshBalance();
+        } catch (e) {
+          // swallow - refreshBalance logs errors
+        }
+      }, 10000);
+    };
+    startPolling();
+    return () => { if (id) clearInterval(id); };
+  }, [user?.token]);
   // Persist to localStorage whenever trades or balance change
   useEffect(() => {
     localStorage.setItem('accountBalance', JSON.stringify(accountBalance));
