@@ -993,12 +993,20 @@ export default function AdminPanel() {
                   <Box sx={{ mt: 1 }}>
                     {withdrawal.method === 'bank' || withdrawal.withdrawalType === 'bank' ? (
                       <Box>
-                        <Typography variant="body2" color="text.secondary"><strong>Bank Name:</strong> {withdrawal.bankName || withdrawal.bank || '-'}</Typography>
-                        <Typography variant="body2" color="text.secondary"><strong>Account Name:</strong> {withdrawal.accountName || withdrawal.account_name || '-'}</Typography>
-                        <Typography variant="body2" color="text.secondary"><strong>Account Number:</strong> {withdrawal.accountNumber || withdrawal.account_number || '-'}</Typography>
+                        <Typography variant="body2" color="text.secondary"><strong>Bank Name:</strong> {withdrawal.bankName || withdrawal.bank || '-'} {' '}
+                          {withdrawal.bankName && <Button size="small" onClick={() => navigator.clipboard.writeText(withdrawal.bankName || withdrawal.bank)}>Copy</Button>}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary"><strong>Account Name:</strong> {withdrawal.accountName || withdrawal.account_name || '-'} {' '}
+                          {withdrawal.accountName && <Button size="small" onClick={() => navigator.clipboard.writeText(withdrawal.accountName || withdrawal.account_name)}>Copy</Button>}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary"><strong>Account Number:</strong> {withdrawal.accountNumber || withdrawal.account_number || '-'} {' '}
+                          {withdrawal.accountNumber && <Button size="small" onClick={() => navigator.clipboard.writeText(withdrawal.accountNumber || withdrawal.account_number)}>Copy</Button>}
+                        </Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="text.secondary"><strong>Wallet Address:</strong> {withdrawal.walletAddress || withdrawal.wallet_address || '-'}</Typography>
+                      <Typography variant="body2" color="text.secondary"><strong>Wallet Address:</strong> {withdrawal.walletAddress || withdrawal.wallet_address || '-'} {' '}
+                        {withdrawal.walletAddress && <Button size="small" onClick={() => navigator.clipboard.writeText(withdrawal.walletAddress || withdrawal.wallet_address)}>Copy</Button>}
+                      </Typography>
                     )}
                   </Box>
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
