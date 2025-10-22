@@ -482,12 +482,15 @@ export default function Trade() {
       status: 'ACTIVE',
       pnl: 0
     };
-    setAccountBalance(prev => prev - trade.amount);
+  // Compute new balance and persist immediately
+  const newBalanceAfterOpen = Number(accountBalance) - Number(trade.amount);
+  setAccountBalance(newBalanceAfterOpen);
     setActiveTrades(prev => [newTrade, ...prev]);
     // Save to backend
-    if (user?.token) {
+    const token = user?.token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
+    if (token) {
       try {
-        await userAPI.saveTrade(user.token, {
+        await userAPI.saveTrade(token, {
           type: 'trade',
           amount: trade.amount,
           meta: {
@@ -497,6 +500,12 @@ export default function Trade() {
             entryPrice: trade.entryPrice
           }
         });
+        // Persist balance so backend is authoritative
+        try {
+          await userAPI.saveBalance(token, newBalanceAfterOpen);
+        } catch (err) {
+          console.error('Save balance after open error:', err);
+        }
       } catch (err) {
         console.error('Save trade error:', err);
       }
@@ -571,9 +580,10 @@ export default function Trade() {
     setActiveTrades(prev => prev.filter(t => t.id !== tradeId));
     setTradeHistory(prev => [updatedTrade, ...prev]);
     // Save closed trade to backend
-    if (user?.token) {
+    const token = user?.token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
+    if (token) {
       try {
-        await userAPI.saveTrade(user.token, {
+        await userAPI.saveTrade(token, {
           type: 'trade',
           amount: trade.amount,
           meta: {
@@ -586,6 +596,13 @@ export default function Trade() {
             closed: true
           }
         });
+        // Persist updated balance so refresh keeps the change
+        const newBalanceAfterClose = Number(accountBalance) + Number(amount) + Number(isNaN(pnl) ? 0 : pnl);
+        try {
+          await userAPI.saveBalance(token, newBalanceAfterClose);
+        } catch (err) {
+          console.error('Save balance after close error:', err);
+        }
       } catch (err) {
         console.error('Save closed trade error:', err);
       }
