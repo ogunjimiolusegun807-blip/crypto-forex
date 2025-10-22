@@ -450,10 +450,26 @@ export default function Trade() {
     const trade = activeTrades.find(t => t.id === tradeId);
     if (!trade) return;
 
-    const exitPrice = currentPrice;
+    const exitPrice = Number(currentPrice);
+    const entryPrice = Number(trade.entryPrice);
+    const amount = Number(trade.amount);
+    const multiplier = Number(trade.multiplier.value);
+
+    // Defensive: ensure all numbers are valid
+    if (
+      isNaN(exitPrice) || isNaN(entryPrice) || isNaN(amount) || isNaN(multiplier) || entryPrice === 0
+    ) {
+      setSnackbar({
+        open: true,
+        message: 'Trade close failed due to invalid price or amount.',
+        severity: 'error'
+      });
+      return;
+    }
+
     const pnl = trade.type === 'BUY'
-      ? (exitPrice - trade.entryPrice) * (trade.amount / trade.entryPrice) * trade.multiplier.value
-      : (trade.entryPrice - exitPrice) * (trade.amount / trade.entryPrice) * trade.multiplier.value;
+      ? (exitPrice - entryPrice) * (amount / entryPrice) * multiplier
+      : (entryPrice - exitPrice) * (amount / entryPrice) * multiplier;
 
     // Update trade
     const updatedTrade = {
@@ -464,12 +480,15 @@ export default function Trade() {
       timestamp: new Date()
     };
 
-  // Update balance (local UI)
-  setAccountBalance(prev => prev + trade.amount + pnl);
+    // Update balance (local UI)
+    setAccountBalance(prev => {
+      const newBalance = Number(prev) + amount + (isNaN(pnl) ? 0 : pnl);
+      return isNaN(newBalance) ? 0 : Math.round(newBalance * 100) / 100;
+    });
 
-  // Move to history
-  setActiveTrades(prev => prev.filter(t => t.id !== tradeId));
-  setTradeHistory(prev => [updatedTrade, ...prev]);
+    // Move to history
+    setActiveTrades(prev => prev.filter(t => t.id !== tradeId));
+    setTradeHistory(prev => [updatedTrade, ...prev]);
 
     setSnackbar({
       open: true,
