@@ -269,12 +269,18 @@ export default function Trade() {
         FOREX_PAIRS.forEach(pair => {
           const [base, quote] = pair.split('/');
           let rate = 1;
-          if (base === 'USD') {
-            rate = forexData.rates[quote];
-          } else if (quote === 'USD') {
-            rate = 1 / forexData.rates[base];
-          } else {
-            rate = forexData.rates[quote] / forexData.rates[base];
+          // Defensive: check if rates exist and contain the currency
+          if (forexData && forexData.rates) {
+            if (base === 'USD' && forexData.rates[quote] !== undefined) {
+              rate = forexData.rates[quote];
+            } else if (quote === 'USD' && forexData.rates[base] !== undefined) {
+              rate = 1 / forexData.rates[base];
+            } else if (forexData.rates[quote] !== undefined && forexData.rates[base] !== undefined) {
+              rate = forexData.rates[quote] / forexData.rates[base];
+            } else {
+              // fallback: keep previous or set to 1
+              rate = 1;
+            }
           }
           forexChanges[pair] = {
             price: rate,
