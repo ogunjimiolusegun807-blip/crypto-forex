@@ -371,6 +371,24 @@ export const userAPI = {
     return await handleResponse(res);
   },
   // --- Trade & Balance sync helpers ---
+    openTrade: async (token, trade) => {
+      // trade: { userId, symbol, amount, multiplier, entryPrice }
+      const res = await fetch(`${BASE_URL}/api/trade/open`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(trade)
+      });
+      return await handleResponse(res);
+    },
+    closeTrade: async (token, tradeId, exitPrice) => {
+      // tradeId: string, exitPrice: number
+      const res = await fetch(`${BASE_URL}/api/trade/close`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ tradeId, exitPrice })
+      });
+      return await handleResponse(res);
+    },
   getTrades: async (token) => {
     const endpoints = [
       `${BASE_URL}/api/user/trades`,

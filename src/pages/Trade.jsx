@@ -476,45 +476,31 @@ export default function Trade() {
       setConfirmDialog({ open: false, trade: null });
       return;
     }
-    const newTrade = {
-      id: `T${Date.now()}`,
-      ...trade,
-      status: 'ACTIVE',
-      pnl: 0
-    };
-  // Compute new balance and persist immediately
-  const newBalanceAfterOpen = Number(accountBalance) - Number(trade.amount);
-  setAccountBalance(newBalanceAfterOpen);
-    setActiveTrades(prev => [newTrade, ...prev]);
-    // Save to backend
     const token = user?.token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
     if (token) {
       try {
-        await userAPI.saveTrade(token, {
-          type: 'trade',
+        const res = await userAPI.openTrade(token, {
+          userId: user?._id,
+          symbol: trade.symbol,
           amount: trade.amount,
-          meta: {
-            symbol: trade.symbol,
-            direction: trade.type,
-            multiplier: trade.multiplier,
-            entryPrice: trade.entryPrice
-          }
+          multiplier: trade.multiplier,
+          entryPrice: trade.entryPrice
         });
-        // Persist balance so backend is authoritative
-        try {
-          await userAPI.saveBalance(token, newBalanceAfterOpen);
-        } catch (err) {
-          console.error('Save balance after open error:', err);
-        }
+        setAccountBalance(res.balance);
+        setActiveTrades(prev => [res.trade, ...prev]);
+        setSnackbar({
+          open: true,
+          message: `${trade.type} ${trade.multiplier} ${trade.symbol} trade opened successfully!`,
+          severity: 'success'
+        });
       } catch (err) {
-        console.error('Save trade error:', err);
+        setSnackbar({
+          open: true,
+          message: err.message || 'Trade open failed',
+          severity: 'error'
+        });
       }
     }
-    setSnackbar({
-      open: true,
-      message: `${trade.type} ${trade.multiplier} ${trade.symbol} trade opened successfully!`,
-      severity: 'success'
-    });
     setConfirmDialog({ open: false, trade: null });
   };
 
@@ -522,96 +508,27 @@ export default function Trade() {
   const closeTrade = async (tradeId) => {
     const trade = activeTrades.find(t => t.id === tradeId);
     if (!trade) return;
-    // Robust parsing helpers
-    const parseNumber = (v) => {
-      if (v === undefined || v === null) return NaN;
-      if (typeof v === 'number') return v;
-      // strip currency symbols and commas
-      const cleaned = String(v).replace(/[^0-9.-]+/g, '');
-      return cleaned === '' ? NaN : Number(cleaned);
-    };
-    const parseMultiplier = (m) => {
-      if (m === undefined || m === null) return 1;
-      if (typeof m === 'number') return m;
-      if (typeof m === 'string') {
-        // Accept formats like 'X2', '2', 'x5'
-        const num = parseFloat(m.replace(/[^0-9.\-]+/g, ''));
-        return Number.isNaN(num) ? 1 : num;
-      }
-      if (typeof m === 'object') {
-        if (m.value !== undefined) return parseMultiplier(m.value);
-        if (m.label !== undefined) return parseMultiplier(m.label);
-      }
-      return 1;
-    };
-
-    const exitPrice = parseNumber(currentPrice);
-    const entryPrice = parseNumber(trade.entryPrice);
-    const amount = parseNumber(trade.amount);
-    const multiplier = parseMultiplier(trade.multiplier);
-
-    // Debug log to help diagnose invalid closes
-    console.debug('Closing trade values', { exitPrice, entryPrice, amount, multiplier, trade });
-
-    if (
-      isNaN(exitPrice) || isNaN(entryPrice) || isNaN(amount) || isNaN(multiplier) || entryPrice === 0
-    ) {
-      setSnackbar({
-        open: true,
-        message: 'Trade close failed due to invalid price or amount. Check that entry price and amount are valid numbers.',
-        severity: 'error'
-      });
-      return;
-    }
-    const pnl = trade.type === 'BUY'
-      ? (exitPrice - entryPrice) * (amount / entryPrice) * multiplier
-      : (entryPrice - exitPrice) * (amount / entryPrice) * multiplier;
-    const updatedTrade = {
-      ...trade,
-      exitPrice,
-      pnl: Math.round(pnl * 100) / 100,
-      status: 'CLOSED',
-      timestamp: new Date()
-    };
-    setAccountBalance(prev => {
-      const newBalance = Number(prev) + amount + (isNaN(pnl) ? 0 : pnl);
-      return isNaN(newBalance) ? 0 : Math.round(newBalance * 100) / 100;
-    });
-    setActiveTrades(prev => prev.filter(t => t.id !== tradeId));
-    setTradeHistory(prev => [updatedTrade, ...prev]);
-    // Save closed trade to backend
     const token = user?.token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
     if (token) {
       try {
-        await userAPI.saveTrade(token, {
-          type: 'trade',
-          amount: trade.amount,
-          meta: {
-            symbol: trade.symbol,
-            direction: trade.type,
-            multiplier: trade.multiplier,
-            entryPrice: trade.entryPrice,
-            exitPrice,
-            pnl: Math.round(pnl * 100) / 100,
-            closed: true
-          }
+        const exitPrice = currentPrice;
+        const res = await userAPI.closeTrade(token, trade._id || trade.id, exitPrice);
+        setAccountBalance(res.balance);
+        setActiveTrades(prev => prev.filter(t => (t._id || t.id) !== (trade._id || trade.id)));
+        setTradeHistory(prev => [res.trade, ...prev]);
+        setSnackbar({
+          open: true,
+          message: `Trade closed with ${res.trade.profitLoss >= 0 ? 'profit' : 'loss'} of $${Math.abs(res.trade.profitLoss)}`,
+          severity: res.trade.profitLoss >= 0 ? 'success' : 'warning'
         });
-        // Persist updated balance so refresh keeps the change
-        const newBalanceAfterClose = Number(accountBalance) + Number(amount) + Number(isNaN(pnl) ? 0 : pnl);
-        try {
-          await userAPI.saveBalance(token, newBalanceAfterClose);
-        } catch (err) {
-          console.error('Save balance after close error:', err);
-        }
       } catch (err) {
-        console.error('Save closed trade error:', err);
+        setSnackbar({
+          open: true,
+          message: err.message || 'Trade close failed',
+          severity: 'error'
+        });
       }
     }
-    setSnackbar({
-      open: true,
-      message: `Trade closed with ${pnl >= 0 ? 'profit' : 'loss'} of $${Math.abs(pnl)}`,
-      severity: pnl >= 0 ? 'success' : 'warning'
-    });
   };
 
   // Get status color
