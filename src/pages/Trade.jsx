@@ -243,18 +243,25 @@ export default function Trade() {
   // Sync with backend on mount (if user.token exists)
   useEffect(() => {
     const syncFromBackend = async () => {
-      if (!user?.token) return;
+      // Accept token from user object or fallback to localStorage
+      const token = user?.token || (typeof window !== 'undefined' && localStorage.getItem('authToken'));
+      if (!token) return;
       setSyncing(true);
       try {
         // Get trades
-        const trades = await userAPI.getTrades(user.token);
-        const active = trades.filter(t => t.status === 'ACTIVE');
-        const history = trades.filter(t => t.status === 'CLOSED');
+        const trades = await userAPI.getTrades(token);
+        // Defensive: ensure trades is an array
+        const tradesArr = Array.isArray(trades) ? trades : (trades && trades.trades) ? trades.trades : [];
+        const active = tradesArr.filter(t => t.status === 'ACTIVE');
+        const history = tradesArr.filter(t => t.status === 'CLOSED');
         setActiveTrades(active);
         setTradeHistory(history);
         // Get balance
-        const balRes = await userAPI.getBalance(user.token);
-        setAccountBalance(balRes.balance ?? 0);
+        const balRes = await userAPI.getBalance(token);
+        console.debug('Balance response from backend:', balRes);
+        // balRes may be { balance: number } or a plain number
+        const resolvedBalance = (balRes && balRes.balance !== undefined) ? Number(balRes.balance) : (typeof balRes === 'number' ? balRes : 0);
+        setAccountBalance(Number.isNaN(resolvedBalance) ? 0 : resolvedBalance);
       } catch (err) {
         // Fallback to localStorage if backend fails
         console.error('Backend sync error:', err);
