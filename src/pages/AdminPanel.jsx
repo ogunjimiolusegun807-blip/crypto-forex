@@ -985,8 +985,13 @@ export default function AdminPanel() {
                     {withdrawal.username || withdrawal.userName || withdrawal.user?.name || 'User'}
                   </Typography>
                   <Typography variant="body2" color="rgba(255,255,255,0.7)">
-                    Amount: ${withdrawal.amount}<br />
-                    Method: {withdrawal.method || withdrawal.method || withdrawal.withdrawalType || 'N/A'}<br />
+                    Amount: ${
+                      withdrawal.amount !== undefined ? withdrawal.amount :
+                      withdrawal.meta?.amount !== undefined ? withdrawal.meta.amount :
+                      withdrawal.activity?.amount !== undefined ? withdrawal.activity.amount :
+                      'N/A'
+                    }<br />
+                    Method: {withdrawal.method || withdrawal.withdrawalType || withdrawal.meta?.method || 'N/A'}<br />
                     Status: <Chip label={withdrawal.status} color={withdrawal.status === 'approved' ? 'success' : withdrawal.status === 'pending' ? 'warning' : 'default'} size="small" />
                   </Typography>
                   {/* Detailed withdrawal fields */}
