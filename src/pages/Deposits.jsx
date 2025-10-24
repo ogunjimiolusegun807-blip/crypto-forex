@@ -72,13 +72,16 @@ function LiveTicker() {
   const tickerBarStyles = {
     position: 'relative',
     width: '100%',
+    maxWidth: { xs: '100vw', sm: 700, md: 900 },
+    margin: '0 auto',
     overflow: 'hidden',
     bgcolor: '#181A20',
-    p: 2,
+    px: { xs: 1, sm: 2 },
+    py: 1.5,
     borderRadius: 2,
     mb: 3,
     boxShadow: 1,
-    height: 44,
+    height: { xs: 40, sm: 44 },
     display: 'flex',
     alignItems: 'center',
   };
@@ -87,6 +90,7 @@ function LiveTicker() {
     alignItems: 'center',
     animation: 'ticker-scroll-ltr 30s linear infinite',
     minWidth: '100%',
+    gap: { xs: 1, sm: 2 },
   };
   // Add keyframes for ticker animation (left to right)
   const tickerKeyframes = `@keyframes ticker-scroll-ltr { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }`;
@@ -97,9 +101,21 @@ function LiveTicker() {
       <Box sx={tickerBarStyles}>
         <Box sx={tickerTrackStyles}>
           {[...tickerItems, ...tickerItems].map((item, idx) => (
-            <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 140, flexDirection: 'row', textAlign: 'left', px: 1 }}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>{item.label}:</Typography>
-              <Typography variant="body1" fontWeight={700} sx={{ color: item.color }}>{item.value}</Typography>
+            <Box
+              key={idx}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 0.5, sm: 1.5 },
+                minWidth: { xs: 110, sm: 140 },
+                flexDirection: 'row',
+                textAlign: 'left',
+                px: { xs: 0.5, sm: 1 },
+                fontSize: { xs: '0.8rem', sm: '1rem' },
+              }}
+            >
+              <Typography variant="subtitle2" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.85rem' } }}>{item.label}:</Typography>
+              <Typography variant="body1" fontWeight={700} sx={{ color: item.color, fontSize: { xs: '0.8rem', sm: '1rem' } }}>{item.value}</Typography>
             </Box>
           ))}
         </Box>
