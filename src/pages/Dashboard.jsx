@@ -58,13 +58,31 @@ export default function Dashboard() {
       try {
         const token = localStorage.getItem('authToken');
         const profile = await userAPI.getProfile(token);
-        const deposits = await userAPI.getDeposits(token);
-        const withdrawals = await userAPI.getWithdrawals(token);
         const kyc = await userAPI.getKYC(token);
+        // Fetch all activities and filter for deposits/withdrawals
+        const apiBase = process.env.NODE_ENV === 'production'
+          ? 'https://crypto-forex-backend.onrender.com'
+          : '';
+        const res = await fetch(`${apiBase}/api/user/activities`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          credentials: 'include',
+        });
+        let activities = [];
+        if (res.ok) {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            activities = await res.json();
+          }
+        }
+        const deposits = activities.filter(a => a.type === 'deposit');
+        const withdrawals = activities.filter(a => a.type === 'withdrawal');
         setDashboardData({
           balance: profile.balance || 0,
-          deposits: deposits.deposits || [],
-          withdrawals: withdrawals.withdrawals || [],
+          deposits,
+          withdrawals,
           kycStatus: kyc.kycStatus || profile.kycStatus || 'unverified',
         });
       } catch (err) {
