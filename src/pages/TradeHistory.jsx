@@ -98,13 +98,13 @@ export default function TradeHistory() {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [tradeActivities, setTradeActivities] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState(null);
 
-  // Fetch trade activities from backend
+  // Fetch all activities from backend
   useEffect(() => {
-    const fetchTradeActivities = async () => {
+    const fetchActivities = async () => {
       setHistoryLoading(true);
       setHistoryError(null);
       try {
@@ -119,16 +119,16 @@ export default function TradeHistory() {
         });
         if (!res.ok) throw new Error('Failed to fetch activities');
         const data = await res.json();
-        setTradeActivities(Array.isArray(data) ? data.filter(a => a.type === 'trade') : []);
+        setActivities(Array.isArray(data) ? data : []);
       } catch (err) {
-        setHistoryError(err.message || 'Failed to fetch trade activities');
+        setHistoryError(err.message || 'Failed to fetch activities');
       } finally {
         setHistoryLoading(false);
       }
     };
-    fetchTradeActivities();
+    fetchActivities();
     // Listen for trade-history-updated event to auto-refresh
-    const handler = () => fetchTradeActivities();
+    const handler = () => fetchActivities();
     window.addEventListener('trade-history-updated', handler);
     return () => window.removeEventListener('trade-history-updated', handler);
   }, []);
@@ -143,12 +143,22 @@ export default function TradeHistory() {
   };
 
   // Filter trade activities based on search and filters
+  const tradeActivities = activities.filter(a => a.type === 'trade');
   const filteredTransactions = tradeActivities.filter(activity => {
     const matchesSearch = activity.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === '' || activity.type === filterType;
     const matchesStatus = filterStatus === '' || activity.status === filterStatus;
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  // Calculate summary statistics from activities
+  const totalDeposits = activities
+    .filter(a => a.type === 'deposit' && (a.status === 'completed' || a.status === 'approved'))
+    .reduce((sum, a) => sum + (a.amount || 0), 0);
+  const totalWithdrawals = activities
+    .filter(a => a.type === 'withdrawal' && (a.status === 'completed' || a.status === 'approved'))
+    .reduce((sum, a) => sum + Math.abs(a.amount || 0), 0);
+  const totalTrades = activities.filter(a => a.type === 'trade').length;
 
   // Get current page transactions
   const paginatedTransactions = filteredTransactions.slice(
@@ -159,7 +169,7 @@ export default function TradeHistory() {
   if (loading || historyLoading) {
     return (
       <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h6" color="primary">Loading trade history...</Typography>
+        <Typography variant="h6" color="primary">Loading history...</Typography>
       </Box>
     );
   }
@@ -173,14 +183,14 @@ export default function TradeHistory() {
   return (
     <Box sx={{ p: { xs: 1, sm: 3 }, minHeight: '100vh' }}>
       {/* Header with site name, username and quick actions - matching Dashboard */}
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        mb: 3, 
-        bgcolor: '#232742', 
-        p: 2, 
-        borderRadius: 3, 
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        mb: 3,
+        bgcolor: '#232742',
+        p: 2,
+        borderRadius: 3,
         boxShadow: 3,
         flexDirection: { xs: 'column', md: 'row' },
         gap: { xs: 2, md: 0 }
@@ -206,8 +216,7 @@ export default function TradeHistory() {
             color={getAccountStatus().color}
             variant="outlined"
             size="small"
-            sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }}
-          />
+            sx={{ height: { xs: 28, sm: 32 }, fontWeight: 600, ml: 1 }} />
           <Button
             variant="contained"
             color="primary"
@@ -252,10 +261,10 @@ export default function TradeHistory() {
       </Box>
 
       {/* Page Title and Actions */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         mb: 3,
         flexDirection: { xs: 'column', sm: 'row' },
         gap: { xs: 2, sm: 0 }
@@ -268,109 +277,56 @@ export default function TradeHistory() {
             View your complete transaction and trading history
           </Typography>
         </Box>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <Button variant="outlined" startIcon={<Refresh />} size="small" fullWidth={{ xs: true, sm: false }}>
-            Refresh
-          </Button>
-          <Button variant="contained" startIcon={<Download />} size="small" fullWidth={{ xs: true, sm: false }}>
-            Export
-          </Button>
-        </Stack>
-      </Box>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <Button
+          variant="outlined"
+          startIcon={<Refresh />}
+          size="small"
+          fullWidth={{ xs: true, sm: false }}
+          onClick={() => window.dispatchEvent(new Event('trade-history-updated'))}
+        >
+          Refresh
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<Download />}
+          size="small"
+          fullWidth={{ xs: true, sm: false }}
+        >
+          Export
+        </Button>
+      </Stack>
+    </Box>
 
-      {/* Summary Cards - use real user data if available */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)',
-            borderRadius: 3,
-            boxShadow: 6,
-            color: '#fff'
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <TrendingUp color="success" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h5" fontWeight="bold" color="success.main">
-                    ${user?.totalDeposits?.toLocaleString() || '0.00'}
-                  </Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
-                    Total Deposits
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)',
-            borderRadius: 3,
-            boxShadow: 6,
-            color: '#fff'
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <TrendingDown color="error" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h5" fontWeight="bold" color="error.main">
-                    ${user?.totalWithdrawals?.toLocaleString() || '0.00'}
-                  </Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
-                    Total Withdrawals
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)',
-            borderRadius: 3,
-            boxShadow: 6,
-            color: '#fff'
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <SwapHoriz color="primary" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h5" fontWeight="bold" color="primary.main">
-                    {user?.totalTrades?.toLocaleString() || '0'}
-                  </Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
-                    Total Trades
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)',
-            borderRadius: 3,
-            boxShadow: 6,
-            color: '#fff'
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <AccountBalanceWallet color="warning" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h5" fontWeight="bold" color="#fff">
-                    ${user?.balance?.toLocaleString() || '0.00'}
-                  </Typography>
-                  <Typography variant="body2" color="rgba(255,255,255,0.7)">
-                    Current Balance
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+    {/* Summary cards for deposits, withdrawals, trades */}
+    <Box sx={{ display: 'flex', gap: 3, mb: 3, flexWrap: 'wrap' }}>
+      <Card sx={{ flex: 1, minWidth: 180, bgcolor: '#1a1d2d', color: 'success.main', boxShadow: 3 }}>
+        <CardContent>
+          <Typography variant="h6">${totalDeposits.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
+          <Typography variant="body2" color="#fff">Total Deposits</Typography>
+        </CardContent>
+      </Card>
+      <Card sx={{ flex: 1, minWidth: 180, bgcolor: '#1a1d2d', color: 'error.main', boxShadow: 3 }}>
+        <CardContent>
+          <Typography variant="h6">${totalWithdrawals.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
+          <Typography variant="body2" color="#fff">Total Withdrawals</Typography>
+        </CardContent>
+      </Card>
+      <Card sx={{ flex: 1, minWidth: 180, bgcolor: '#1a1d2d', color: 'info.main', boxShadow: 3 }}>
+        <CardContent>
+          <Typography variant="h6">{totalTrades}</Typography>
+          <Typography variant="body2" color="#fff">Total Trades</Typography>
+        </CardContent>
+      </Card>
+      <Card sx={{ flex: 1, minWidth: 180, bgcolor: '#1a1d2d', color: '#fff', boxShadow: 3 }}>
+        <CardContent>
+          <Typography variant="h6">${user?.balance?.toLocaleString() || '0.00'}</Typography>
+          <Typography variant="body2" color="#fff">Current Balance</Typography>
+        </CardContent>
+      </Card>
+    </Box>
 
-      {/* Filters and Search */}
+    {/* Filters and Search */}
       <Card sx={{ 
         background: 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)',
         borderRadius: 3,
