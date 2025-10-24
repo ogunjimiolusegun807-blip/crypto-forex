@@ -98,29 +98,37 @@ export default function TradeHistory() {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [tradeHistory, setTradeHistory] = useState([]);
+  const [tradeActivities, setTradeActivities] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState(null);
 
-  // Fetch trade history from backend
+  // Fetch trade activities from backend
   useEffect(() => {
-    const fetchTradeHistory = async () => {
+    const fetchTradeActivities = async () => {
       setHistoryLoading(true);
       setHistoryError(null);
       try {
         const token = localStorage.getItem('authToken');
         if (!token) throw new Error('No auth token found');
-        const history = await userAPI.getTradeHistory(token);
-        setTradeHistory(Array.isArray(history) ? history : []);
+        const res = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://crypto-forex-backend.onrender.com' : ''}/api/user/activities`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to fetch activities');
+        const data = await res.json();
+        setTradeActivities(Array.isArray(data) ? data.filter(a => a.type === 'trade') : []);
       } catch (err) {
-        setHistoryError(err.message || 'Failed to fetch trade history');
+        setHistoryError(err.message || 'Failed to fetch trade activities');
       } finally {
         setHistoryLoading(false);
       }
     };
-    fetchTradeHistory();
+    fetchTradeActivities();
     // Listen for trade-history-updated event to auto-refresh
-    const handler = () => fetchTradeHistory();
+    const handler = () => fetchTradeActivities();
     window.addEventListener('trade-history-updated', handler);
     return () => window.removeEventListener('trade-history-updated', handler);
   }, []);
@@ -134,13 +142,11 @@ export default function TradeHistory() {
     setPage(0);
   };
 
-  // Filter transactions based on search and filters
-  const transactions = tradeHistory;
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.reference?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = filterType === '' || transaction.type === filterType;
-    const matchesStatus = filterStatus === '' || transaction.status === filterStatus;
+  // Filter trade activities based on search and filters
+  const filteredTransactions = tradeActivities.filter(activity => {
+    const matchesSearch = activity.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === '' || activity.type === filterType;
+    const matchesStatus = filterStatus === '' || activity.status === filterStatus;
     return matchesSearch && matchesType && matchesStatus;
   });
 
