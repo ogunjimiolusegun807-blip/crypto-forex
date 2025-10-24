@@ -531,11 +531,11 @@ export default function TradeHistory() {
                     </TableCell>
                     <TableCell align="right">
                       <Typography
-                        color={transaction.amount?.startsWith('+') ? 'success.main' : 'error.main'}
+                        color={typeof transaction.amount === 'number' ? (transaction.amount >= 0 ? 'success.main' : 'error.main') : 'default'}
                         fontWeight="bold"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                       >
-                        {transaction.amount}
+                        {typeof transaction.amount === 'number' ? transaction.amount.toLocaleString() : transaction.amount}
                       </Typography>
                     </TableCell>
                     <TableCell>
