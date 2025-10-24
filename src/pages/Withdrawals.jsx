@@ -363,7 +363,7 @@ export default function Withdrawals() {
               />
             </>
           )}
-          {(withdrawalType === 'litecoin' || withdrawalType === 'ethereum' || withdrawalType === 'bitcoin') && (
+          {(withdrawalType === 'litecoin' || withdrawalType === 'ethereum' || withdrawalType === 'bitcoin' || withdrawalType === 'usdt') && (
             <TextField 
               label="Wallet Address" 
               fullWidth 
