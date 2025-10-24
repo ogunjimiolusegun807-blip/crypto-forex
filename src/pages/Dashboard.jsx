@@ -84,10 +84,18 @@ export default function Dashboard() {
     { label: 'AAPL', value: '$170', change: '+1.2%', color: theme.palette.success.main }
   ];
   const cardGradient = 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)';
+  // Calculate deposit and withdrawal subtotals
+  const depositTotal = dashboardData.deposits && dashboardData.deposits.length > 0
+    ? dashboardData.deposits.reduce((sum, d) => sum + (Number(d.amount) || 0), 0)
+    : 0;
+  const withdrawalTotal = dashboardData.withdrawals && dashboardData.withdrawals.length > 0
+    ? dashboardData.withdrawals.reduce((sum, w) => sum + (Number(w.amount) || 0), 0)
+    : 0;
+
   const topCards = [
     { label: 'Total Balance', value: `$${dashboardData.balance.toLocaleString()}`, icon: <AccountBalanceWalletIcon />, gradient: cardGradient },
-    { label: 'Deposits', value: `${dashboardData.deposits.length}`, icon: <ShowChartIcon />, gradient: cardGradient },
-    { label: 'Withdrawals', value: `${dashboardData.withdrawals.length}`, icon: <HistoryIcon />, gradient: cardGradient },
+    { label: 'Total Deposits', value: `$${depositTotal.toLocaleString()}`, sub: `${dashboardData.deposits.length} Deposits`, icon: <ShowChartIcon />, gradient: cardGradient },
+    { label: 'Total Withdrawals', value: `$${withdrawalTotal.toLocaleString()}`, sub: `${dashboardData.withdrawals.length} Withdrawals`, icon: <HistoryIcon />, gradient: cardGradient },
     {
       label: 'Account Status',
       value: getAccountStatus().label.toUpperCase(),
@@ -193,6 +201,9 @@ export default function Dashboard() {
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="h6" fontWeight={700} sx={{ color: '#fff', fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.4rem' }, lineHeight: 1.2, mb: 0.5 }}>{card.value}</Typography>
                 <Typography variant="subtitle2" fontWeight={500} sx={{ color: '#fff', opacity: 0.9, fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' }, lineHeight: 1.2 }}>{card.label}</Typography>
+                {card.sub && (
+                  <Typography variant="caption" fontWeight={400} sx={{ color: '#fff', opacity: 0.7, fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.9rem' }, lineHeight: 1.2 }}>{card.sub}</Typography>
+                )}
                 {card.chip && (
                   <Box sx={{ mt: 1 }}>
                     <Chip
