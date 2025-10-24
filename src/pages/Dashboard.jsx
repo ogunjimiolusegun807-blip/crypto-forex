@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import LiveTicker from '../components/LiveTicker';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Alert, Typography, Button, Box, Grid, Card, useTheme, Avatar, Stack, Chip } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -95,12 +96,6 @@ export default function Dashboard() {
   }, [user]);
 
   // Cards use dashboardData
-  // Add tickerData for ticker bar
-  const tickerData = [
-    { label: 'BTC/USDT', value: '$27,000', change: '+2.5%', color: theme.palette.success.main },
-    { label: 'EUR/USD', value: '1.10', change: '-0.3%', color: theme.palette.error.main },
-    { label: 'AAPL', value: '$170', change: '+1.2%', color: theme.palette.success.main }
-  ];
   const cardGradient = 'linear-gradient(135deg, #232742 0%, #1a1d2b 100%)';
   // Calculate deposit and withdrawal subtotals
   const depositTotal = dashboardData.deposits && dashboardData.deposits.length > 0
@@ -200,16 +195,8 @@ export default function Dashboard() {
           </Button>
         </Stack>
       </Box>
-      {/* Ticker Bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2, md: 3 }, bgcolor: '#181A20', p: { xs: 1, sm: 1.5 }, borderRadius: 2, mb: 3, overflowX: 'auto', boxShadow: 1 }}>
-        {tickerData.map((item, idx) => (
-          <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, minWidth: { xs: 140, sm: 160, md: 180 }, flexDirection: { xs: 'column', sm: 'row' }, textAlign: { xs: 'center', sm: 'left' }, py: { xs: 0.5, sm: 0 }, px: { xs: 1, sm: 0 } }}>
-            <Typography variant="subtitle2" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8125rem' } }}>{item.label}</Typography>
-            <Typography variant="body1" color="#fff" fontWeight={700} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' } }}>{item.value}</Typography>
-            <Typography variant="body2" color={item.color} fontWeight={700} sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' } }}>{item.change}</Typography>
-          </Box>
-        ))}
-      </Box>
+      {/* Live Ticker Bar */}
+      <LiveTicker />
       {/* Dashboard Cards - Top Row */}
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 0.5 }}>
         {topCards.map((card) => (

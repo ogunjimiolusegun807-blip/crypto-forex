@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { userAPI } from '../services/api';
+import LiveTicker from '../components/LiveTicker';
 import { 
   Typography, 
   Box, 
@@ -28,12 +29,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 // import CryptoTicker from '../components/CryptoTicker';
 import { useTheme } from '@mui/material/styles';
 
-const tickerData = [
-  { label: 'Nasdaq 100', value: '24,344.8', change: '+98.90 (+0.41%)', color: 'success.main' },
-  { label: 'EUR/USD', value: '1.18099', change: '-0.00059 (-0.05%)', color: 'error.main' },
-  { label: 'BTC/USD', value: '116,747', change: '+270.00 (+0.23%)', color: 'success.main' },
-  { label: 'ETH/USD', value: '4,620.8', change: '+28.50', color: 'success.main' },
-];
 
 const withdrawalOptions = [
   { value: 'bank', label: 'Bank Transfer' },
@@ -210,75 +205,8 @@ export default function Withdrawals() {
         </Stack>
       </Box>
 
-      {/* Ticker Bar - same as Dashboard */}
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: { xs: 1.5, sm: 2, md: 3 }, 
-        bgcolor: '#181A20', 
-        p: { xs: 1, sm: 1.5 }, 
-        borderRadius: 2, 
-        mb: 3, 
-        overflowX: 'auto', 
-        boxShadow: 1,
-        '&::-webkit-scrollbar': { 
-          height: { xs: 4, sm: 6 }
-        },
-        '&::-webkit-scrollbar-track': { 
-          bgcolor: 'rgba(255,255,255,0.05)',
-          borderRadius: 2
-        },
-        '&::-webkit-scrollbar-thumb': { 
-          bgcolor: 'primary.main', 
-          borderRadius: 2,
-          '&:hover': {
-            bgcolor: 'primary.dark'
-          }
-        },
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'primary.main rgba(255,255,255,0.1)'
-      }}>
-        {tickerData.map((item, idx) => (
-          <Box 
-            key={idx} 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: { xs: 0.5, sm: 1 },
-              minWidth: { xs: 140, sm: 160, md: 180 },
-              flexDirection: { xs: 'column', sm: 'row' },
-              textAlign: { xs: 'center', sm: 'left' },
-              py: { xs: 0.5, sm: 0 },
-              px: { xs: 1, sm: 0 }
-            }}
-          >
-            <Typography 
-              variant="subtitle2" 
-              color="text.secondary" 
-              fontWeight={600}
-              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8125rem' } }}
-            >
-              {item.label}
-            </Typography>
-            <Typography 
-              variant="body1" 
-              color="#fff" 
-              fontWeight={700}
-              sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.95rem' } }}
-            >
-              {item.value}
-            </Typography>
-            <Typography 
-              variant="body2" 
-              color={item.color} 
-              fontWeight={700}
-              sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' } }}
-            >
-              {item.change}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
+      {/* Live Ticker Bar */}
+      <LiveTicker />
 
       {/* Withdraw Form - centered and professional */}
       <Box maxWidth={{ xs: '100%', sm: 500 }} mx="auto" sx={{ px: { xs: 1, sm: 0 } }}>
