@@ -33,19 +33,22 @@ function LiveTicker() {
     eurusd: null,
     btcusd: null,
     ethusd: null,
+    gbpusd: null,
+    usdjpy: null,
   });
 
   useEffect(() => {
     const fetchPrices = async () => {
-      // Example: fetch crypto prices from CoinGecko
       const btc = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd').then(res => res.json());
       const eth = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd').then(res => res.json());
-      // Static values for Nasdaq and EUR/USD (replace with live API if needed)
+      // Add more static or mock data for other markets
       setPrices({
         nasdaq: '24,344.8',
         eurusd: '1.18099',
         btcusd: btc.bitcoin.usd,
         ethusd: eth.ethereum.usd,
+        gbpusd: '1.2500',
+        usdjpy: '149.50',
       });
     };
     fetchPrices();
@@ -53,13 +56,55 @@ function LiveTicker() {
     return () => clearInterval(interval);
   }, []);
 
+  // Prepare ticker items (mix of live and static)
+  const tickerItems = [
+    { label: 'Nasdaq 100', value: prices.nasdaq || '...', color: '#fff' },
+    { label: 'EUR/USD', value: prices.eurusd || '...', color: '#fff' },
+    { label: 'BTC/USD', value: prices.btcusd || '...', color: '#00B386' },
+    { label: 'ETH/USD', value: prices.ethusd || '...', color: '#00B386' },
+    { label: 'GBP/USD', value: prices.gbpusd || '...', color: '#fff' },
+    { label: 'USD/JPY', value: prices.usdjpy || '...', color: '#fff' },
+    { label: 'AAPL', value: '$170', color: '#00B386' },
+    { label: 'TSLA', value: '$250', color: '#00B386' },
+  ];
+
+  // Animated ticker bar styles
+  const tickerBarStyles = {
+    position: 'relative',
+    width: '100%',
+    overflow: 'hidden',
+    bgcolor: '#181A20',
+    p: 2,
+    borderRadius: 2,
+    mb: 3,
+    boxShadow: 1,
+    height: 44,
+    display: 'flex',
+    alignItems: 'center',
+  };
+  const tickerTrackStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    animation: 'ticker-scroll-ltr 30s linear infinite',
+    minWidth: '100%',
+  };
+  // Add keyframes for ticker animation (left to right)
+  const tickerKeyframes = `@keyframes ticker-scroll-ltr { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }`;
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: '#181A20', p: 2, borderRadius: 2, mb: 3, boxShadow: 1 }}>
-      <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>Nasdaq 100: <span style={{ color: '#fff' }}>{prices.nasdaq || '...'}</span></Typography>
-      <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>EUR/USD: <span style={{ color: '#fff' }}>{prices.eurusd || '...'}</span></Typography>
-      <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>BTC/USD: <span style={{ color: '#00B386' }}>{prices.btcusd || '...'}</span></Typography>
-      <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>ETH/USD: <span style={{ color: '#00B386' }}>{prices.ethusd || '...'}</span></Typography>
-    </Box>
+    <>
+      <style>{tickerKeyframes}</style>
+      <Box sx={tickerBarStyles}>
+        <Box sx={tickerTrackStyles}>
+          {[...tickerItems, ...tickerItems].map((item, idx) => (
+            <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 140, flexDirection: 'row', textAlign: 'left', px: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>{item.label}:</Typography>
+              <Typography variant="body1" fontWeight={700} sx={{ color: item.color }}>{item.value}</Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    </>
   );
 }
 
