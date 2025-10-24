@@ -35,6 +35,7 @@ const withdrawalOptions = [
   { value: 'litecoin', label: 'Litecoin' },
   { value: 'ethereum', label: 'Ethereum' },
   { value: 'bitcoin', label: 'Bitcoin' },
+  { value: 'usdt', label: 'USDT (Tether)' },
 ];
 
 export default function Withdrawals() {
