@@ -123,7 +123,7 @@ export default function ReferUser() {
 
   // Real referral data from user context (now inside function)
   const referralId = user?.username || '';
-  const referralLink = user?.username ? `https://crypto-forex-three.vercel.app/ref/${user.username}` : '';
+  const referralLink = user?.username ? `https://www.eloninvestmentbroker.com/ref/${user.username}` : '';
   const totalReferrals = user?.referralData?.totalReferrals || 0;
   const activeReferrals = user?.referralData?.activeReferrals || 0;
   const totalCommissions = user?.referralData?.totalCommissions || 0;
